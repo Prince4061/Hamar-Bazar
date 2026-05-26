@@ -6,10 +6,13 @@
         <h1 class="screen-title">Vendor Dashboard: {{ session.get('name', 'Apna Bazaar') }}</h1>
         <p class="screen-subtitle">Manage customer orders, toggle items in stock, and dispatch ready packages.</p>
     </div>
-    <!-- Status indicator -->
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--emerald-green); display: inline-block; box-shadow: 0 0 8px var(--emerald-green);"></span>
-        <span style="font-size: 0.85rem; font-weight: 500;">Live Feed Active</span>
+    <!-- Status indicator & Logout -->
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-accent); display: inline-block; box-shadow: 0 0 8px var(--primary-accent);"></span>
+            <span style="font-size: 0.85rem; font-weight: 500;">Live Feed Active</span>
+        </div>
+        <a href="/session/logout" class="btn btn-secondary" style="color: var(--ruby-danger); width: auto; font-size: 0.85rem; padding: 8px 16px; font-weight: 700;">🚪 Logout</a>
     </div>
 </div>
 
@@ -27,7 +30,7 @@
         </div>
 
         <div class="glass-card">
-            <h3 style="margin-bottom: 16px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">📋 Active Incoming Orders</h3>
+            <h3 style="margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">📋 Active Incoming Orders</h3>
             
             <div class="order-queue-grid" id="orders-queue-container">
                 <!-- Loaded dynamically -->
@@ -42,7 +45,7 @@
 
     <!-- Inventory Stock Controller Drawer (VEND-002) -->
     <div class="glass-card" style="height: fit-content;">
-        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">📦 Inventory Stock Control</h3>
+        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">📦 Inventory Stock Control</h3>
         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px;">Quickly hide or display items on the customer app in real-time.</p>
         
         <div id="inventory-list-container" style="display: flex; flex-direction: column; gap: 10px;">
@@ -53,7 +56,7 @@
 
 <!-- NEW ORDER POPUP MODAL (VEND-001) -->
 <div id="new-order-modal" class="overlay-modal" style="display: none;">
-    <div class="modal-content" style="border-color: var(--accent-cyan); box-shadow: 0 0 30px rgba(0, 242, 254, 0.3);">
+    <div class="modal-content" style="border-color: var(--primary-accent); box-shadow: var(--primary-glow);">
         <div class="modal-header">🔔 New Order Received!</div>
         <div class="modal-body">
             <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;" id="modal-customer-details">Customer: --</p>
@@ -62,7 +65,7 @@
             
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-primary" id="modal-accept-btn" style="flex: 1;">Accept Order</button>
-                <button class="btn btn-secondary" onclick="dismissNewOrderAlert()" style="flex: 1;">Mute Alarm</button>
+                <button class="btn btn-secondary" onclick="muteCurrentOrder()" style="flex: 1;">Mute Alarm</button>
             </div>
         </div>
     </div>
@@ -71,11 +74,28 @@
 <script>
     const shopId = {{ active_shop_id }};
     let ordersList = [];
-    let knownOrderIds = new Set();
+    let currentAlertingOrderId = null;
     let pollInterval = null;
     let audioInterval = null;
     let audioContext = null;
     let alarmActive = false;
+
+    // Helper functions for muting order notifications (VEND-001)
+    function getMutedOrders() {
+        try {
+            return JSON.parse(localStorage.getItem(`muted_orders_${shopId}`)) || [];
+        } catch (e) {
+            return [];
+        }
+    }
+    
+    function muteOrder(orderId) {
+        let muted = getMutedOrders();
+        if (!muted.includes(orderId)) {
+            muted.push(orderId);
+            localStorage.setItem(`muted_orders_${shopId}`, JSON.stringify(muted));
+        }
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
         // First load
@@ -89,6 +109,19 @@
             loadInventory();
             loadStockPredictions();
         }, 10000);
+
+        // Resume AudioContext on first click or keydown (browser policy compliance)
+        const resumeAudio = () => {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log("AudioContext active");
+                });
+            }
+            document.removeEventListener('click', resumeAudio);
+            document.removeEventListener('keydown', resumeAudio);
+        };
+        document.addEventListener('click', resumeAudio);
+        document.addEventListener('keydown', resumeAudio);
     });
 
     // Web Audio Synthesizer for Loud Beep alerts (VEND-001)
@@ -152,25 +185,24 @@
                 renderOrders();
                 
                 // Identify new incoming PENDING orders to trigger alarm
-                const newPendingOrders = data.filter(o => o.status === 'PENDING' && !knownOrderIds.has(o.id));
+                const mutedIds = getMutedOrders();
+                const unacceptedPending = data.filter(o => o.status === 'PENDING' && !mutedIds.includes(o.id));
                 
-                if (newPendingOrders.length > 0) {
-                    const latest = newPendingOrders[0];
-                    // Display popup modal
-                    showNewOrderAlert(latest);
-                    
-                    // Add all to known set to prevent re-triggering
-                    newPendingOrders.forEach(o => knownOrderIds.add(o.id));
-                }
-                
-                // Fill known set for first load to avoid false alarms
-                if (knownOrderIds.size === 0) {
-                    data.forEach(o => knownOrderIds.add(o.id));
+                if (unacceptedPending.length > 0) {
+                    const latest = unacceptedPending[0];
+                    const modal = document.getElementById("new-order-modal");
+                    // Trigger alert modal & alarm sound
+                    if (modal.style.display === "none" || currentAlertingOrderId !== latest.id) {
+                        showNewOrderAlert(latest);
+                    }
+                } else {
+                    dismissNewOrderAlert();
                 }
             });
     }
 
     function showNewOrderAlert(order) {
+        currentAlertingOrderId = order.id;
         document.getElementById("modal-customer-details").innerText = `Customer: ${order.customer_name}`;
         
         // Fetch order details for list summary
@@ -201,6 +233,14 @@
     function dismissNewOrderAlert() {
         document.getElementById("new-order-modal").style.display = "none";
         stopLoudAlarm();
+        currentAlertingOrderId = null;
+    }
+
+    function muteCurrentOrder() {
+        if (currentAlertingOrderId) {
+            muteOrder(currentAlertingOrderId);
+        }
+        dismissNewOrderAlert();
     }
 
     function acceptIncomingOrder(orderId) {
@@ -252,7 +292,7 @@
                 actionBtn = `<button class="btn btn-secondary text-accent" onclick="markOrderReady(${o.id})">Mark as Ready & Ready OTP</button>`;
             } else if (o.status === 'READY_FOR_PICKUP') {
                 actionBtn = `<button class="btn btn-secondary w-full" disabled>Waiting for Pickup...</button>`;
-                otpDisplay = `<div style="margin-top:10px; padding:6px; background:rgba(0,242,254,0.06); border:1px solid rgba(0,242,254,0.2); border-radius:6px; font-weight:600; text-align:center; font-size:0.9rem;">
+                 otpDisplay = `<div style="margin-top:10px; padding:6px; background:var(--primary-light); border:1px solid var(--primary-glow); border-radius:6px; font-weight:600; text-align:center; font-size:0.9rem;">
                                 🔑 Pickup OTP: <span class="text-accent">${o.pickup_otp}</span>
                               </div>`;
             } else if (o.status === 'OUT_FOR_DELIVERY') {
@@ -272,7 +312,7 @@
                         <div>📞 <strong>Phone:</strong> ${o.customer_phone}</div>
                     </div>
                     
-                    <div style="font-size:0.9rem; font-weight:600; color:var(--accent-cyan); margin-bottom:12px;">
+                    <div style="font-size:0.9rem; font-weight:600; color:var(--primary-accent); margin-bottom:12px;">
                         Total Amount: ₹${o.total_amount.toFixed(2)}
                     </div>
                 </div>
@@ -297,13 +337,13 @@
                     const row = document.createElement("div");
                     row.className = "flex-between";
                     row.style.padding = "8px 0";
-                    row.style.borderBottom = "1px solid var(--border-glass)";
+                    row.style.borderBottom = "1px solid var(--border-color)";
                     
                     row.innerHTML = `
                         <span style="font-size:0.9rem; font-weight:500; text-decoration: ${prod.is_available ? 'none' : 'line-through'}; color: ${prod.is_available ? 'var(--text-primary)' : 'var(--text-muted)'}">${prod.name}</span>
                         <label style="position: relative; display: inline-block; width: 36px; height: 20px;">
                             <input type="checkbox" ${prod.is_available ? 'checked' : ''} onchange="toggleStock(${prod.id}, this.checked)" style="opacity: 0; width: 0; height: 0; margin:0;" id="stock-check-${prod.id}">
-                            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${prod.is_available ? 'var(--emerald-green)' : '#4b5563'}; transition: .3s; border-radius: 20px;"></span>
+                             <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${prod.is_available ? 'var(--primary-accent)' : '#4b5563'}; transition: .3s; border-radius: 20px;"></span>
                         </label>
                     `;
                     container.appendChild(row);

@@ -6,9 +6,10 @@
         <h1 class="screen-title">Welcome back, {{ session.get('name', 'Alice Sharma') }}!</h1>
         <p class="screen-subtitle">Browse exclusive shops in your area for 30-minute delivery.</p>
     </div>
-    <!-- Quick Expense Insights Toggle -->
-    <div>
-        <button class="btn btn-secondary" onclick="toggleExpensesModal()">📊 Expense Insights</button>
+    <!-- Quick Expense Insights Toggle & Logout -->
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary" onclick="toggleExpensesModal()" style="width: auto;">📊 Expense Insights</button>
+        <a href="/session/logout" class="btn btn-secondary" style="color: var(--ruby-danger); width: auto; font-weight: 700;">🚪 Logout</a>
     </div>
 </div>
 
@@ -25,7 +26,7 @@
 
 <!-- ACTIVE ORDER TRACKER TIMELINE (CUST-004) -->
 <div id="active-order-container" class="glass-card" style="display: none;">
-    <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">
+    <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
         <span style="font-weight: 600;">📦 Active Order Tracking (<span id="tracking-order-id" class="text-accent">#--</span>)</span>
         <span id="tracking-order-status" class="badge">PENDING</span>
     </div>
@@ -59,7 +60,7 @@
         </div>
     </div>
     
-    <div id="delivery-info-section" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-glass); display: none;">
+    <div id="delivery-info-section" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-color); display: none;">
         <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">
             🏍️ <strong>Rider Assigned:</strong> <span id="rider-name" class="text-accent"> राहुल</span> (<span id="rider-phone">9000000001</span>)
         </p>
@@ -124,8 +125,8 @@
         </div>
         
         <!-- SMART RECOMMENDATION BOX (INT-001) -->
-        <div id="recommendation-box" class="glass-card" style="display: none; background: rgba(0, 242, 254, 0.03); border: 1px dashed rgba(0, 242, 254, 0.3); padding: 12px; margin-bottom: 16px; border-radius: 8px;">
-            <span style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px;">💡 AI Smart Suggestion</span>
+        <div id="recommendation-box" class="glass-card" style="display: none; background: var(--primary-light); border: 1px dashed var(--primary-accent); padding: 12px; margin-bottom: 16px; border-radius: 8px;">
+            <span style="font-size: 0.75rem; color: var(--primary-accent); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px;">💡 AI Smart Suggestion</span>
             <div class="flex-between">
                 <div>
                     <span id="rec-item-name" style="font-weight: 500; font-size: 0.85rem;">Butter</span>
@@ -135,7 +136,7 @@
             </div>
         </div>
 
-        <div id="cart-summary-section" style="display: none; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+        <div id="cart-summary-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px;">
             <div class="flex-between mb-sm" style="font-size: 0.9rem;">
                 <span>Subtotal:</span>
                 <span id="cart-subtotal">₹0.00</span>
@@ -144,7 +145,7 @@
                 <span>GST (18% Dynamic):</span>
                 <span id="cart-gst">₹0.00</span>
             </div>
-            <div class="flex-between mb-sm" style="font-size: 1.1rem; font-weight: 700; border-top: 1px dashed var(--border-glass); padding-top: 8px;">
+            <div class="flex-between mb-sm" style="font-size: 1.1rem; font-weight: 700; border-top: 1px dashed var(--border-color); padding-top: 8px;">
                 <span>Grand Total:</span>
                 <span id="cart-grandtotal" class="text-accent">₹0.00</span>
             </div>
@@ -153,7 +154,7 @@
             <div class="form-group mt-md">
                 <label class="form-label">Delivery Priority (INT-002)</label>
                 <div style="display: flex; gap: 10px;">
-                    <label style="flex: 1; text-align: center; border: 1px solid var(--border-glass); padding: 8px; border-radius: 6px; cursor: pointer; display: block;">
+                    <label style="flex: 1; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; cursor: pointer; display: block;">
                         <input type="radio" name="priority" value="NORMAL" checked style="margin-right: 4px;"> Normal
                     </label>
                     <label style="flex: 1; text-align: center; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px; border-radius: 6px; cursor: pointer; display: block; color: var(--ruby-danger);">
@@ -186,7 +187,7 @@
         <div class="modal-header">Monthly Expense Insights</div>
         <div class="modal-body">
             <p style="margin-bottom: 12px; font-size: 0.85rem;">Spending breakdown by category for verified delivered orders.</p>
-            <div id="expense-stats" style="text-align: left; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+            <div id="expense-stats" style="text-align: left; background: #f8fafc; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
                 <!-- Loaded dynamically -->
             </div>
             <button class="btn btn-secondary" onclick="toggleExpensesModal()">Close</button>
@@ -547,8 +548,8 @@
                                 <span>${k} (${c.count} orders)</span>
                                 <strong>₹${c.spent.toFixed(2)}</strong>
                             </div>
-                            <div style="background:rgba(255,255,255,0.05); height:8px; border-radius:4px; overflow:hidden;">
-                                <div style="background:var(--accent-glow); height:100%; width:${pct}%;"></div>
+                            <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
+                                <div style="background:var(--primary-accent); height:100%; width:${pct}%;"></div>
                             </div>
                         </div>
                     `;

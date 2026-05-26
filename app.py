@@ -52,68 +52,222 @@ def switch_session():
         
     return redirect(request.referrer or f'/{role}')
 
+@app.route('/session/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
 # -------------------------------------------------------------
 # Views Pages
 # -------------------------------------------------------------
 @app.route('/')
 def home():
-    # If no role selected, default to Customer
+    # If no role selected, redirect to login page
     if 'role' not in session:
-        session['role'] = 'customer'
-        session['role_id'] = 1
-        session['name'] = 'Alice Sharma'
+        return redirect('/login')
     return redirect(f"/{session['role']}")
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.json
+        else:
+            data = request.form
+        phone = data.get('phone', '').strip().replace(" ", "").replace("-", "")
+        username = data.get('username', '').strip()
+        password = data.get('password', '').strip()
+        
+        # Remove country code +91 if present
+        if phone.startswith('+91'):
+            phone = phone[3:]
+        elif phone.startswith('91') and len(phone) > 10:
+            phone = phone[2:]
+            
+        if not phone or not username:
+            return jsonify({'success': False, 'error': 'Mobile number and username are required.'})
+            
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM users WHERE phone LIKE ? OR name LIKE ?", (f"%{phone}%", f"%{username}%"))
+        user = cursor.fetchone()
+        
+        if user:
+            session['role'] = 'customer'
+            session['role_id'] = user['id']
+            session['name'] = user['name']
+            return jsonify({'success': True, 'redirect': '/customer'})
+        else:
+            # Dynamically register/create a new customer if phone number doesn't exist
+            # This implements "anyone can login by their credentials"
+            new_address = "Sector 4, Local Area"
+            try:
+                cursor.execute("INSERT INTO users (name, phone, address) VALUES (?, ?, ?)", (username, phone, new_address))
+                db.commit()
+                # Get the newly created user
+                cursor.execute("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,))
+                user = cursor.fetchone()
+                session['role'] = 'customer'
+                session['role_id'] = user['id']
+                session['name'] = user['name']
+                return jsonify({'success': True, 'redirect': '/customer'})
+            except Exception as e:
+                return jsonify({'success': False, 'error': f'Failed to create user: {str(e)}'})
+                
+    return render_template('login.html')
+@app.route('/staff-login', methods=['GET', 'POST'])
+def staff_login():
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.json
+        else:
+            data = request.form
+        role = data.get('role', '').strip()  # admin, vendor, delivery
+        identifier = data.get('identifier', '').strip()
+        
+        if not role or not identifier:
+            return jsonify({'success': False, 'error': 'Role and ID are required.'})
+            
+        db = get_db()
+        cursor = db.cursor()
+        
+        if role == 'admin':
+            # Admin login
+            session['role'] = 'admin'
+            session['role_id'] = 0
+            session['name'] = 'Super Admin'
+            return jsonify({'success': True, 'redirect': '/admin'})
+            
+        elif role == 'vendor':
+            # Normalize common vendor aliases to seeded shops
+            norm_id = identifier.lower().strip()
+            if norm_id in ['kirana', 'grocery', 'general', 'apna', 'apna bazaar', 'apnabazaar', '1']:
+                identifier = 'KIRANA'
+            elif norm_id in ['cakes', 'cake', 'bakery', 'baker', 'bakers', '2']:
+                identifier = 'CAKES'
+            elif norm_id in ['veggies', 'vegetables', 'fresh', 'green', '3']:
+                identifier = 'VEGGIES'
+            elif norm_id in ['electronics', 'electro', 'electroworld', '4']:
+                identifier = 'ELECTRONICS'
+
+            # Check if vendor identifier exists
+            shop = None
+            if identifier.isdigit():
+                cursor.execute("SELECT * FROM shops WHERE id = ?", (int(identifier),))
+                shop = cursor.fetchone()
+            else:
+                cursor.execute("SELECT * FROM shops WHERE shop_name LIKE ? OR category LIKE ?", (f"%{identifier}%", f"%{identifier}%"))
+                shop = cursor.fetchone()
+                
+            if not shop:
+                # If shop doesn't exist, dynamically create it to let anyone log in!
+                category = "SHOP_" + identifier.upper().replace(" ", "_")[:10]
+                shop_name = identifier if "shop" in identifier.lower() or "bazaar" in identifier.lower() else f"{identifier} Store"
+                try:
+                    cursor.execute("INSERT INTO shops (shop_name, category, commission_pct) VALUES (?, ?, ?)", (shop_name, category, 5.0))
+                    db.commit()
+                    cursor.execute("SELECT * FROM shops WHERE id = ?", (cursor.lastrowid,))
+                    shop = cursor.fetchone()
+                    
+                    # Seed default products
+                    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop['id'], 'Standard Product A', 100.0))
+                    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop['id'], 'Standard Product B', 200.0))
+                    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop['id'], 'Standard Product C', 350.0))
+                    db.commit()
+                except Exception as e:
+                    # Check if category exists
+                    cursor.execute("SELECT * FROM shops WHERE category = ?", (category,))
+                    shop = cursor.fetchone()
+                    if not shop:
+                        return jsonify({'success': False, 'error': f'Failed to create vendor: {str(e)}'})
+            
+            session['role'] = 'vendor'
+            session['role_id'] = shop['id']
+            session['name'] = shop['shop_name']
+            return jsonify({'success': True, 'redirect': '/vendor'})
+            
+        elif role == 'delivery':
+            # Normalize common delivery boy aliases to seeded riders
+            norm_id = identifier.lower().strip()
+            if norm_id in ['rahul', 'rahul rider', 'rider1', '1']:
+                identifier = 'Rahul Rider'
+            elif norm_id in ['amit', 'amit express', 'rider2', '2']:
+                identifier = 'Amit Express'
+            elif norm_id in ['vicky', 'vicky speedster', 'rider3', '3']:
+                identifier = 'Vicky Speedster'
+
+            rider = None
+            if identifier.isdigit():
+                cursor.execute("SELECT * FROM delivery_partners WHERE id = ?", (int(identifier),))
+                rider = cursor.fetchone()
+            else:
+                cursor.execute("SELECT * FROM delivery_partners WHERE name LIKE ?", (f"%{identifier}%",))
+                rider = cursor.fetchone()
+                
+            if not rider:
+                rider_name = identifier if "rider" in identifier.lower() or "delivery" in identifier.lower() else f"{identifier} Rider"
+                import random
+                mock_phone = f"9000{random.randint(100000, 999999)}"
+                try:
+                    cursor.execute("INSERT INTO delivery_partners (name, phone, active_orders, availability_status) VALUES (?, ?, 0, 'online')", (rider_name, mock_phone))
+                    db.commit()
+                    cursor.execute("SELECT * FROM delivery_partners WHERE id = ?", (cursor.lastrowid,))
+                    rider = cursor.fetchone()
+                except Exception as e:
+                    return jsonify({'success': False, 'error': f'Failed to create rider: {str(e)}'})
+                    
+            session['role'] = 'delivery'
+            session['role_id'] = rider['id']
+            session['name'] = rider['name']
+            return jsonify({'success': True, 'redirect': '/delivery'})
+            
+        return jsonify({'success': False, 'error': 'Invalid role.'})
+        
+    return render_template('staff_login.html')
+
+
 
 @app.route('/customer')
 def customer_view():
+    if session.get('role') != 'customer':
+        return redirect('/login')
+        
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM users")
     users = cursor.fetchall()
     
-    # Ensure role is synced
-    if session.get('role') != 'customer':
-        session['role'] = 'customer'
-        session['role_id'] = users[0]['id'] if users else 1
-        session['name'] = users[0]['name'] if users else 'Customer'
-        
     return render_template('customer.html', users=users, active_user_id=session.get('role_id'))
 
 @app.route('/vendor')
 def vendor_view():
+    if session.get('role') != 'vendor':
+        return redirect('/staff-login')
+        
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM shops")
     shops = cursor.fetchall()
     
-    # Ensure role is synced
-    if session.get('role') != 'vendor':
-        session['role'] = 'vendor'
-        session['role_id'] = shops[0]['id'] if shops else 1
-        session['name'] = shops[0]['shop_name'] if shops else 'Vendor'
-        
     return render_template('vendor.html', shops=shops, active_shop_id=session.get('role_id'))
 
 @app.route('/delivery')
 def delivery_view():
+    if session.get('role') != 'delivery':
+        return redirect('/staff-login')
+        
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM delivery_partners")
     riders = cursor.fetchall()
-    
-    # Ensure role is synced
-    if session.get('role') != 'delivery':
-        session['role'] = 'delivery'
-        session['role_id'] = riders[0]['id'] if riders else 1
-        session['name'] = riders[0]['name'] if riders else 'Delivery Rider'
         
     return render_template('delivery.html', riders=riders, active_rider_id=session.get('role_id'))
 
 @app.route('/admin')
 def admin_view():
-    session['role'] = 'admin'
-    session['role_id'] = 0
-    session['name'] = 'Super Admin'
+    if session.get('role') != 'admin':
+        return redirect('/staff-login')
+        
     return render_template('admin.html')
 
 # -------------------------------------------------------------
@@ -624,6 +778,31 @@ def admin_modify_product(prod_id):
         ''', (name, float(price), int(is_available), prod_id))
         db.commit()
         return jsonify({'message': 'Product updated successfully.'})
+
+# --- Rider Active Job & Status APIs ---
+@app.route('/api/delivery/rider/<int:rider_id>/active', methods=['GET'])
+def get_rider_active_order(rider_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        SELECT id FROM orders 
+        WHERE delivery_boy_id = ? AND status NOT IN ('DELIVERED', 'FAILED')
+        LIMIT 1
+    ''', (rider_id,))
+    row = cursor.fetchone()
+    if row:
+        return jsonify({'active_order_id': row['id']})
+    return jsonify({'active_order_id': None})
+
+@app.route('/api/delivery/rider/<int:rider_id>/status', methods=['GET'])
+def get_rider_status(rider_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT cooldown_until, active_orders, availability_status FROM delivery_partners WHERE id = ?", (rider_id,))
+    row = cursor.fetchone()
+    if row:
+        return jsonify(dict(row))
+    return jsonify({'error': 'Rider not found'}), 404
 
 # --- Cooldown timer reset route (For easy debugging/demo) ---
 @app.route('/api/delivery/rider/<int:rider_id>/reset-cooldown', methods=['POST'])

@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="login-page-wrapper staff-theme">
+    <!-- Top Nav Action -->
+    <div class="login-top-bar">
+        <a href="/login" class="btn-top-switch">← Customer Portal Login</a>
+    </div>
+
+    <!-- Main Grid Content -->
+    <div class="login-grid">
+        <!-- Left Side: Role details and support -->
+        <div class="login-left-panel">
+            <div class="brand-header">
+                <div class="mor-bazar-logo-container green-theme">
+                    <svg viewBox="0 0 24 24" class="bazar-logo-svg">
+                        <path d="M8 8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8" stroke="#009c62" stroke-width="2.5" stroke-linecap="round"/>
+                        <rect x="4" y="8" width="16" height="13" rx="3.5" fill="#009c62"/>
+                        <path d="M8 16V13C8 12.4477 8.4477 12 9 12C9.5523 12 10 12.4477 10 13V16M10 13C10 12.4477 10.4477 12 11 12C11.5523 12 12 12.4477 12 13V16" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="brand-text-group">
+                    <span class="brand-name-main">Mor Bazar</span>
+                    <span class="brand-tagline-main">Staff Operations</span>
+                </div>
+            </div>
+
+            <div class="delivery-hero-text">
+                <h1>Welcome Back!</h1>
+                <p class="hero-desc">Login to access your Mor Bazar dashboard</p>
+            </div>
+
+            <!-- Staff Role Profiles -->
+            <div class="staff-role-descriptions">
+                <!-- Admin -->
+                <div class="staff-desc-item purple-border">
+                    <div class="staff-desc-icon-wrapper bg-purple">
+                        <span class="staff-icon">🛡️</span>
+                    </div>
+                    <div class="staff-desc-text">
+                        <h4>Admin</h4>
+                        <p>Manage platform, vendors, delivery partners and analytics.</p>
+                    </div>
+                </div>
+                <!-- Vendor -->
+                <div class="staff-desc-item green-border">
+                    <div class="staff-desc-icon-wrapper bg-green">
+                        <span class="staff-icon">🏪</span>
+                    </div>
+                    <div class="staff-desc-text">
+                        <h4>Vendor</h4>
+                        <p>Manage your shop, orders, inventory and earnings.</p>
+                    </div>
+                </div>
+                <!-- Delivery Boy -->
+                <div class="staff-desc-item orange-border">
+                    <div class="staff-desc-icon-wrapper bg-orange">
+                        <span class="staff-icon">🛵</span>
+                    </div>
+                    <div class="staff-desc-text">
+                        <h4>Delivery Boy</h4>
+                        <p>Accept orders, deliver safely and earn with Mor Bazar.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="support-contact-container">
+                <button class="btn-support-contact" onclick="alert('Support channel is simulated. Please email support@morbazar.com')">
+                    <span style="font-size: 1.1rem; margin-right: 8px;">🎧</span> Need Help? Contact Support
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Side: Staff Login Card -->
+        <div class="login-right-panel">
+            <div class="login-card-desktop">
+                <h2 class="card-title-main">Staff Login</h2>
+                <p class="card-subtitle-main">Please login to continue</p>
+
+                <!-- Input Form -->
+                <form id="staff-login-form" onsubmit="handleStaffLogin(event)">
+                    <div id="login-error-msg" class="login-error-alert" style="display: none;"></div>
+
+                    <!-- Role Selector (matches screenshot) -->
+                    <div class="form-group">
+                        <label class="form-label-staff">Select Role</label>
+                        <div class="role-selector-row">
+                            <input type="hidden" name="role" id="selected-role" value="admin">
+                            
+                            <button type="button" class="role-selector-btn role-admin active" onclick="setRole('admin')">
+                                <span class="role-btn-icon">🛡️</span> Admin
+                            </button>
+                            <button type="button" class="role-selector-btn role-vendor" onclick="setRole('vendor')">
+                                <span class="role-btn-icon">🏪</span> Vendor
+                            </button>
+                            <button type="button" class="role-selector-btn role-delivery" onclick="setRole('delivery')">
+                                <span class="role-btn-icon">🛵</span> Delivery Boy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group staff-field-group">
+                        <input type="text" id="staff-identifier" class="form-input-staff" placeholder="Enter ID / Email" required>
+                    </div>
+                    <div id="staff-help-text" style="font-size: 0.825rem; color: var(--text-secondary); margin-top: -8px; margin-bottom: 12px; font-weight: 500; text-align: left; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.02);"></div>
+
+                    <div class="form-group staff-field-group" style="position: relative;">
+                        <input type="password" id="staff-password" class="form-input-staff" placeholder="Password" required>
+                        <span class="password-toggle-eye" onclick="togglePasswordVisibility()">👁️</span>
+                    </div>
+
+                    <div class="remember-forgot-row">
+                        <label class="remember-checkbox-label">
+                            <input type="checkbox" id="remember-me" checked> Remember me
+                        </label>
+                        <a href="#" class="forgot-password-link" onclick="alert('Simulation: Seeded accounts do not require password validation. Click Login directly!')">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-staff-login">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Green Wave Decor (matches screenshot bottom waves) -->
+    <div class="staff-bottom-waves">
+        <svg viewBox="0 0 1440 200" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M0 120L60 115C120 110 240 100 360 105C480 110 600 130 720 135C840 140 960 130 1080 115C1200 100 1320 80 1380 70L1440 60V200H1380C1320 200 1200 200 1080 200C960 200 840 200 720 200C600 200 480 200 360 200C240 200 120 200 60 200H0V120Z" fill="url(#wave-gradient-1)" opacity="0.6"/>
+            <path d="M0 140L60 145C120 150 240 160 360 155C480 150 600 130 720 120C840 110 960 110 1080 120C1200 130 1320 150 1380 160L1440 170V200H1380C1320 200 1200 200 1080 200C960 200 840 200 720 200C600 200 480 200 360 200C240 200 120 200 60 200H0V140Z" fill="url(#wave-gradient-2)"/>
+            <defs>
+                <linearGradient id="wave-gradient-1" x1="720" y1="60" x2="720" y2="200" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#a7f3d0" stop-opacity="0.1"/>
+                    <stop offset="1" stop-color="#059669" stop-opacity="0.2"/>
+                </linearGradient>
+                <linearGradient id="wave-gradient-2" x1="720" y1="110" x2="720" y2="200" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#d1fae5" stop-opacity="0.2"/>
+                    <stop offset="1" stop-color="#10b981" stop-opacity="0.4"/>
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+</div>
+
+<script>
+    function setRole(role) {
+        document.getElementById("selected-role").value = role;
+        
+        // Remove active class from all buttons
+        document.querySelectorAll(".role-selector-btn").forEach(btn => {
+            btn.classList.remove("active");
+        });
+        
+        // Add active class to selected button
+        document.querySelector(`.role-selector-btn.role-${role}`).classList.add("active");
+
+        // Swap placeholders/details dynamically if desired
+        const idInput = document.getElementById("staff-identifier");
+        const helpText = document.getElementById("staff-help-text");
+        if (role === 'admin') {
+            idInput.placeholder = "Enter ID / Email (e.g. admin)";
+            helpText.innerHTML = "💡 Pre-configured admin username: <code>admin</code>";
+        } else if (role === 'vendor') {
+            idInput.placeholder = "Enter ID / Email (e.g. kirana, cakes, veggies)";
+            helpText.innerHTML = "💡 Exclusive shops: <code>kirana</code>, <code>cakes</code>, <code>veggies</code>, <code>electronics</code>";
+        } else {
+            idInput.placeholder = "Enter ID / Email (e.g. rahul, amit)";
+            helpText.innerHTML = "💡 Seed riders: <code>rahul</code>, <code>amit</code>, <code>vicky</code>";
+        }
+    }
+
+    function togglePasswordVisibility() {
+        const pwdInput = document.getElementById("staff-password");
+        if (pwdInput.type === "password") {
+            pwdInput.type = "text";
+        } else {
+            pwdInput.type = "password";
+        }
+    }
+
+    function handleStaffLogin(event) {
+        event.preventDefault();
+        const role = document.getElementById("selected-role").value;
+        const identifier = document.getElementById("staff-identifier").value;
+        const password = document.getElementById("staff-password").value;
+        const errorDiv = document.getElementById("login-error-msg");
+        
+        errorDiv.style.display = "none";
+        
+        fetch("/staff-login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `role=${encodeURIComponent(role)}&identifier=${encodeURIComponent(identifier)}&password=${encodeURIComponent(password)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Logged in as ${role.toUpperCase()} (Simulated). Redirecting...`);
+                window.location.href = data.redirect;
+            } else {
+                errorDiv.innerText = data.error;
+                errorDiv.style.display = "block";
+            }
+        })
+        .catch(err => {
+            console.error("Staff Login error:", err);
+            errorDiv.innerText = "Connection error. Please try again.";
+            errorDiv.style.display = "block";
+        });
+    }
+    
+    // Set default placeholder
+    setRole('admin');
+</script>
+{% endblock %}

@@ -6,9 +6,10 @@
         <h1 class="screen-title">Delivery Dashboard: {{ session.get('name', 'Rahul Rider') }}</h1>
         <p class="screen-subtitle">Browse ready-for-pickup orders, claim jobs, and input OTP verification codes.</p>
     </div>
-    <!-- Reset Cooldown simulation tool -->
-    <div>
+    <!-- Reset Cooldown simulation tool & Logout -->
+    <div style="display: flex; gap: 10px;">
         <button class="btn btn-secondary" onclick="resetRiderState()" style="font-size:0.8rem; padding: 6px 12px; width:auto;">🔄 Reset Cooldown</button>
+        <a href="/session/logout" class="btn btn-secondary" style="color: var(--ruby-danger); font-size:0.8rem; padding: 6px 12px; width:auto; font-weight: 700;">🚪 Logout</a>
     </div>
 </div>
 
@@ -27,7 +28,7 @@
     <!-- Active Claimed Order Interface -->
     <div>
         <div class="glass-card">
-            <h3 style="margin-bottom: 16px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">🚴 Your Active Delivery Job</h3>
+            <h3 style="margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🚴 Your Active Delivery Job</h3>
             
             <div id="active-job-container">
                 <!-- Loaded dynamically -->
@@ -42,7 +43,7 @@
 
     <!-- Job Pool -->
     <div class="glass-card" style="height: fit-content;">
-        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;">🌐 Available Jobs Pool</h3>
+        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🌐 Available Jobs Pool</h3>
         <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom: 16px;">Orders ready for pickup in the area. Sorted by priority.</p>
         
         <div id="job-pool-container" style="display: flex; flex-direction: column; gap: 12px;">
@@ -84,34 +85,16 @@
     }
 
     function checkRiderActiveJob() {
-        // Fetch recent orders or custom check for rider active status
-        fetch('/api/admin/analytics')
+        // Fetch active order ID for this specific rider dynamically (ADMIN-003)
+        fetch(`/api/delivery/rider/${riderId}/active`)
             .then(res => res.json())
             .then(data => {
-                const recent = data.recent_orders || [];
-                // Look for order assigned to us that is NOT DELIVERED or FAILED
-                // Let's call /api/orders/<id> for verification
-                let foundActive = null;
-                
-                // Inspect recent orders in dashboard payload to search for rider mapping
-                const match = recent.find(o => o.status !== 'DELIVERED' && o.status !== 'FAILED');
-                
-                if (match) {
-                    // Fetch full details of matching order to see if it is assigned to this rider
-                    fetch(`/api/orders/${match.id}`)
+                if (data.active_order_id) {
+                    fetch(`/api/orders/${data.active_order_id}`)
                         .then(res => res.json())
                         .then(fullDetails => {
-                            if (fullDetails.delivery_boy_id === riderId && fullDetails.status !== 'DELIVERED') {
-                                activeJob = fullDetails;
-                                renderActiveJob();
-                            } else {
-                                // Not ours
-                                if (!activeJob || activeJob.id === match.id) {
-                                    activeJob = null;
-                                    document.getElementById("active-job-container").innerHTML = "";
-                                    document.getElementById("empty-job-placeholder").style.display = "block";
-                                }
-                            }
+                            activeJob = fullDetails;
+                            renderActiveJob();
                         });
                 } else {
                     activeJob = null;
@@ -125,23 +108,21 @@
     }
 
     function checkRiderCooldown() {
-        // Fetch rider cooldown timestamp by requesting our own details or status
-        // Since we can switch sessions, we read active rider's cooldown using active orders API or mock analytics
-        // Let's inspect the active_orders or cooldown_until status from the list
-        fetch(`/api/delivery/pool`)
-            .then(res => {
-                // To fetch rider cooldown, we can trigger a simulated check
-                // We'll read it from a helper route if needed, or check if activeJob cooldown is present.
-                // We will look up rider list from domestic selector
-                {% for r in riders %}
-                    {% if r.id == active_rider_id %}
-                        const cooldownUntilStr = "{{ r.cooldown_until }}";
-                        if (cooldownUntilStr && cooldownUntilStr !== "None") {
-                            startCooldownCountdown(cooldownUntilStr);
-                        }
-                    {% endif %}
-                {% endfor %}
-            });
+        // Fetch rider cooldown status dynamically (ADMIN-003)
+        fetch(`/api/delivery/rider/${riderId}/status`)
+            .then(res => res.json())
+            .then(rider => {
+                if (rider.cooldown_until) {
+                    startCooldownCountdown(rider.cooldown_until);
+                } else {
+                    document.getElementById("cooldown-banner").style.display = "none";
+                    if (cooldownTimerInterval) {
+                        clearInterval(cooldownTimerInterval);
+                        cooldownTimerInterval = null;
+                    }
+                }
+            })
+            .catch(err => console.error("Error fetching rider status: ", err));
     }
 
     function startCooldownCountdown(cooldownStr) {
@@ -262,7 +243,7 @@
         
         if (o.status === 'READY_FOR_PICKUP') {
             otpForm = `
-                <div style="margin-top: 15px; padding: 12px; border: 1px dashed var(--border-glass); border-radius: 8px;">
+                <div style="margin-top: 15px; padding: 12px; border: 1px dashed var(--border-color); border-radius: 8px;">
                     <label class="form-label">🔑 Step 1: Verify Pickup OTP (Ask Shop Vendor)</label>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="pickup-otp-input-${o.id}" class="form-input" placeholder="4 Digits" maxlength="4" style="text-align:center; font-weight:700; font-size:1.1rem; letter-spacing:4px;">
@@ -286,8 +267,8 @@
         let itemsHtml = o.items.map(item => `<li>${item.quantity}x ${item.product_name}</li>`).join("");
 
         container.innerHTML = `
-            <div class="glass-card" style="margin-bottom:0; background:rgba(255,255,255,0.02);">
-                <div class="flex-between mb-sm" style="border-bottom:1px solid var(--border-glass); padding-bottom:6px;">
+            <div class="glass-card" style="margin-bottom:0; background:#ffffff;">
+                <div class="flex-between mb-sm" style="border-bottom:1px solid var(--border-color); padding-bottom:6px;">
                     <span style="font-weight:700; font-size:1.1rem;">Order #${o.id}</span>
                     <span class="badge ${o.priority_type === 'URGENT' ? 'badge-urgent' : 'badge-normal'}">${o.priority_type}</span>
                 </div>
@@ -306,7 +287,7 @@
                     </ul>
                 </div>
 
-                <div style="font-size:0.95rem; font-weight:700; color:var(--accent-cyan);">
+                <div style="font-size:0.95rem; font-weight:700; color:var(--primary-accent);">
                     Collect Cash (if COD): ₹${o.total_amount.toFixed(2)}
                 </div>
                 

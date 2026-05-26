@@ -6,6 +6,9 @@
         <h1 class="screen-title">Super Admin Operations Center</h1>
         <p class="screen-subtitle">Track platform analytics, audit delivery logs, adjust tax values, and manage product catalogs.</p>
     </div>
+    <div>
+        <a href="/session/logout" class="btn btn-secondary" style="color: var(--ruby-danger); font-size:0.85rem; padding: 8px 16px; width:auto; font-weight: 700;">🚪 Logout</a>
+    </div>
 </div>
 
 <!-- ANALYTICS CARDS (ADMIN-001) -->
@@ -78,7 +81,7 @@
 <div class="shop-section mt-md">
     <!-- Product Catalog List -->
     <div class="glass-card">
-        <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-glass); padding-bottom: 8px; margin-bottom: 12px;">
+        <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px;">
             <h3 style="font-weight:600;">📦 Product Directory CRUD</h3>
             <select id="crud-shop-filter" class="form-input" style="width: auto; padding: 4px 8px; font-size:0.85rem;" onchange="loadCrudProducts()">
                 <option value="1">Apna Bazaar (Kirana)</option>
@@ -95,7 +98,7 @@
 
     <!-- Product Form -->
     <div class="glass-card" style="height: fit-content;">
-        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-glass); padding-bottom: 8px;" id="form-action-title">➕ Add New Product</h3>
+        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;" id="form-action-title">➕ Add New Product</h3>
         
         <input type="hidden" id="edit-prod-id">
         
@@ -198,7 +201,7 @@
                         <td>${s.total_orders}</td>
                         <td>₹${(s.sales || 0).toFixed(2)}</td>
                         <td>${s.acceptance_rate}%</td>
-                        <td style="font-weight:700; color:var(--accent-cyan);">⭐️ ${s.avg_rating} / 5.0</td>
+                        <td style="font-weight:700; color:var(--primary-accent);">⭐️ ${s.avg_rating} / 5.0</td>
                     `;
                     vBody.appendChild(row);
                 });
@@ -340,8 +343,8 @@
                     const row = document.createElement("div");
                     row.className = "flex-between";
                     row.style.padding = "10px";
-                    row.style.background = "rgba(255,255,255,0.02)";
-                    row.style.border = "1px solid var(--border-glass)";
+                    row.style.background = "#ffffff";
+                    row.style.border = "1px solid var(--border-color)";
                     row.style.borderRadius = "8px";
                     
                     row.innerHTML = `
