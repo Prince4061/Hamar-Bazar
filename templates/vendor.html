@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="flex-between mb-sm">
-    <div>
-        <h1 class="screen-title">Vendor Dashboard: {{ session.get('name', 'Apna Bazaar') }}</h1>
-        <p class="screen-subtitle">Manage customer orders, toggle items in stock, and dispatch ready packages.</p>
-    </div>
-    <!-- Status indicator & Logout -->
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-accent); display: inline-block; box-shadow: 0 0 8px var(--primary-accent);"></span>
-            <span style="font-size: 0.85rem; font-weight: 500;">Live Feed Active</span>
+<div class="glass-card fade-in-up" style="background: linear-gradient(135deg, var(--primary-light) 0%, rgba(255,255,255,1) 100%); margin-bottom: 32px;">
+    <div class="flex-between">
+        <div>
+            <h1 class="screen-title">{{ session.get('name', 'Apna Bazaar') }} Dashboard</h1>
+            <p class="screen-subtitle">Manage operations, toggle stock, and dispatch ready orders.</p>
         </div>
-        <a href="/session/logout" class="btn btn-secondary" style="color: var(--ruby-danger); width: auto; font-size: 0.85rem; padding: 8px 16px; font-weight: 700;">🚪 Logout</a>
+        <!-- Status indicator -->
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; background: #ffffff; padding: 10px 16px; border-radius: 30px; box-shadow: var(--shadow-soft);">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: var(--primary-accent); display: inline-block; box-shadow: 0 0 10px var(--primary-accent); animation: pulseRing 1.5s infinite;"></span>
+                <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Live System Active</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -20,52 +21,66 @@
     <!-- Orders Board -->
     <div>
         <!-- Low Stock Prediction Warnings Banner (INT-004) -->
-        <div id="low-stock-alert-banner" style="display: none; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: var(--amber-warning); font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;">
-                ⚠️ Low Stock Prediction Alert
+        <div id="low-stock-alert-banner" class="fade-in-up" style="display: none; background: rgba(245, 158, 11, 0.08); border: 2px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 10px; color: var(--amber-warning); font-weight: 800; font-size: 1.05rem; margin-bottom: 12px;">
+                ⚠️ Stock Depletion Warning
             </div>
-            <ul id="low-stock-predictions-list" style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 20px;">
+            <ul id="low-stock-predictions-list" style="font-size: 0.9rem; color: var(--text-secondary); padding-left: 28px; line-height: 1.6; font-weight: 500;">
                 <!-- Filled dynamically -->
             </ul>
         </div>
 
         <div class="glass-card">
-            <h3 style="margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">📋 Active Incoming Orders</h3>
+            <div class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px;">
+                <h3 style="font-size: 1.25rem; font-weight: 800;">📋 Incoming Orders</h3>
+                <button class="btn-circle" onclick="loadOrders()" title="Refresh Orders" style="font-size: 1rem;">🔄</button>
+            </div>
             
             <div class="order-queue-grid" id="orders-queue-container">
                 <!-- Loaded dynamically -->
             </div>
             
-            <div id="empty-orders-placeholder" style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
-                <span style="font-size: 2.5rem; display: block; margin-bottom: 8px;">😴</span>
-                <p style="font-size: 0.9rem;">No active orders right now. Incoming requests will alert you.</p>
+            <div id="empty-orders-placeholder" style="text-align: center; padding: 60px 10px; color: var(--text-muted);">
+                <span style="font-size: 3.5rem; display: block; margin-bottom: 16px;">🎧</span>
+                <h4 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">All caught up!</h4>
+                <p style="font-size: 1rem;">No active orders right now. We'll alert you when a request arrives.</p>
             </div>
         </div>
     </div>
 
     <!-- Inventory Stock Controller Drawer (VEND-002) -->
-    <div class="glass-card" style="height: fit-content;">
-        <h3 style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">📦 Inventory Stock Control</h3>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 16px;">Quickly hide or display items on the customer app in real-time.</p>
-        
-        <div id="inventory-list-container" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Loaded dynamically -->
+    <div style="position: sticky; top: 100px;">
+        <div class="glass-card">
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px;">📦 Stock Control</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;">Instantly hide items on the customer app if they run out.</p>
+            
+            <div id="inventory-list-container" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Loaded dynamically -->
+            </div>
         </div>
     </div>
 </div>
 
 <!-- NEW ORDER POPUP MODAL (VEND-001) -->
 <div id="new-order-modal" class="overlay-modal" style="display: none;">
-    <div class="modal-content" style="border-color: var(--primary-accent); box-shadow: var(--primary-glow);">
-        <div class="modal-header">🔔 New Order Received!</div>
+    <div class="modal-content" style="border: 2px solid var(--primary-accent); box-shadow: var(--shadow-float);">
+        <div class="modal-header">🔔 New Request</div>
         <div class="modal-body">
-            <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;" id="modal-customer-details">Customer: --</p>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 14px;" id="modal-items-summary">Items: --</p>
-            <div id="modal-priority-badge" style="margin-bottom: 16px;"></div>
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 12px;">👤</div>
+                <p style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);" id="modal-customer-details">Customer: --</p>
+            </div>
             
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" id="modal-accept-btn" style="flex: 1;">Accept Order</button>
-                <button class="btn btn-secondary" onclick="muteCurrentOrder()" style="flex: 1;">Mute Alarm</button>
+            <div style="background: #f8fafc; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); text-align: left; margin-bottom: 24px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; display: block;">Order Contents</span>
+                <p style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);" id="modal-items-summary">Items: --</p>
+            </div>
+
+            <div id="modal-priority-badge" style="margin-bottom: 32px;"></div>
+            
+            <div style="display: flex; gap: 16px;">
+                <button class="btn btn-secondary" onclick="muteCurrentOrder()" style="flex: 1; padding: 16px; font-size: 1rem;">🔇 Mute</button>
+                <button class="btn btn-primary" id="modal-accept-btn" style="flex: 2; padding: 16px; font-size: 1.1rem;">Accept Now</button>
             </div>
         </div>
     </div>
@@ -203,22 +218,22 @@
 
     function showNewOrderAlert(order) {
         currentAlertingOrderId = order.id;
-        document.getElementById("modal-customer-details").innerText = `Customer: ${order.customer_name}`;
+        document.getElementById("modal-customer-details").innerText = `${order.customer_name}`;
         
         // Fetch order details for list summary
         fetch(`/api/orders/${order.id}`)
             .then(res => res.json())
             .then(details => {
                 const itemsText = details.items.map(item => `${item.quantity}x ${item.product_name}`).join(", ");
-                document.getElementById("modal-items-summary").innerText = `Items: ${itemsText}`;
+                document.getElementById("modal-items-summary").innerText = `${itemsText}`;
             });
 
         const badgeBox = document.getElementById("modal-priority-badge");
         if (order.priority_type === 'URGENT') {
-            badgeBox.innerHTML = `<span class="badge badge-urgent">🚨 URGENT DELIVERY CHOSEN</span>`;
+            badgeBox.innerHTML = `<span class="badge badge-urgent" style="font-size: 1rem; padding: 8px 16px;">🚨 URGENT PRIORITY ORDER</span>`;
             startLoudAlarm(true); // Urgent fast alarm sound
         } else {
-            badgeBox.innerHTML = `<span class="badge badge-normal">Normal Delivery</span>`;
+            badgeBox.innerHTML = `<span class="badge badge-normal" style="font-size: 1rem; padding: 8px 16px;">Standard Priority</span>`;
             startLoudAlarm(false); // Normal alarm sound
         }
         
@@ -247,7 +262,6 @@
         fetch(`/api/orders/${orderId}/accept`, { method: "POST" })
             .then(res => res.json())
             .then(data => {
-                alert(data.message || "Order accepted.");
                 loadOrders();
             });
     }
@@ -259,7 +273,6 @@
                 if (data.error) {
                     alert(data.error);
                 } else {
-                    alert(`Order marked Ready! Share this OTP with the Delivery Rider:\n👉 Pickup OTP: ${data.pickup_otp}`);
                     loadOrders();
                 }
             });
@@ -280,40 +293,54 @@
         
         activeOrders.forEach(o => {
             const card = document.createElement("div");
-            card.className = `vendor-order-card ${o.priority_type === 'URGENT' ? 'urgent-border' : ''}`;
+            card.className = `vendor-order-card fade-in-up ${o.priority_type === 'URGENT' ? 'urgent-border' : ''}`;
             
-            let statusText = o.status;
             let actionBtn = "";
             let otpDisplay = "";
+            let statusBadge = "";
             
             if (o.status === 'PENDING') {
-                actionBtn = `<button class="btn btn-primary" onclick="acceptIncomingOrder(${o.id})">Accept Order</button>`;
+                statusBadge = `<span class="badge badge-status-pending">PENDING</span>`;
+                actionBtn = `<button class="btn btn-primary" style="padding: 14px;" onclick="acceptIncomingOrder(${o.id})">Accept Order</button>`;
             } else if (o.status === 'ACCEPTED') {
-                actionBtn = `<button class="btn btn-secondary text-accent" onclick="markOrderReady(${o.id})">Mark as Ready & Ready OTP</button>`;
+                statusBadge = `<span class="badge badge-status-ready">PREPARING</span>`;
+                actionBtn = `<button class="btn btn-secondary text-accent" style="padding: 14px; border-color: var(--primary-accent);" onclick="markOrderReady(${o.id})">Mark as Packed</button>`;
             } else if (o.status === 'READY_FOR_PICKUP') {
-                actionBtn = `<button class="btn btn-secondary w-full" disabled>Waiting for Pickup...</button>`;
-                 otpDisplay = `<div style="margin-top:10px; padding:6px; background:var(--primary-light); border:1px solid var(--primary-glow); border-radius:6px; font-weight:600; text-align:center; font-size:0.9rem;">
-                                🔑 Pickup OTP: <span class="text-accent">${o.pickup_otp}</span>
+                statusBadge = `<span class="badge badge-status-ready" style="background: var(--emerald-light); border-color: var(--emerald-green); color: var(--emerald-green);">READY</span>`;
+                actionBtn = `<button class="btn btn-secondary w-full" disabled style="opacity: 0.7;">Waiting for Rider...</button>`;
+                otpDisplay = `<div style="margin-top:16px; padding:12px; background:#f8fafc; border:1px dashed var(--border-color); border-radius:var(--radius-sm); display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:700; color:var(--text-secondary); font-size: 0.85rem; text-transform: uppercase;">Handover OTP</span>
+                                <span class="text-accent" style="font-weight:800; font-size:1.25rem; letter-spacing: 2px;">${o.pickup_otp}</span>
                               </div>`;
             } else if (o.status === 'OUT_FOR_DELIVERY') {
-                actionBtn = `<button class="btn btn-secondary w-full" disabled>Out for Delivery</button>`;
+                statusBadge = `<span class="badge badge-status-delivered">DISPATCHED</span>`;
+                actionBtn = `<button class="btn btn-secondary w-full" disabled style="opacity: 0.6; background: #f8fafc;">En Route</button>`;
             }
             
             card.innerHTML = `
                 <div>
-                    <div class="flex-between mb-sm">
-                        <span style="font-weight:600; font-size:1.05rem;">Order #${o.id}</span>
-                        <span class="badge ${o.priority_type === 'URGENT' ? 'badge-urgent' : 'badge-normal'}">${o.priority_type}</span>
+                    <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                        <span style="font-weight:800; font-size:1.15rem; font-family: 'Outfit', sans-serif;">#${o.id}</span>
+                        <div style="display: flex; gap: 8px;">
+                            ${o.priority_type === 'URGENT' ? '<span class="badge badge-urgent">URGENT</span>' : ''}
+                            ${statusBadge}
+                        </div>
                     </div>
                     
-                    <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px;">
-                        <div>👤 <strong>Name:</strong> ${o.customer_name}</div>
-                        <div>📍 <strong>Address:</strong> ${o.customer_address}</div>
-                        <div>📞 <strong>Phone:</strong> ${o.customer_phone}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px; margin-bottom: 16px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">👤</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">${o.customer_name}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">${o.customer_phone}</div>
+                        </div>
                     </div>
                     
-                    <div style="font-size:0.9rem; font-weight:600; color:var(--primary-accent); margin-bottom:12px;">
-                        Total Amount: ₹${o.total_amount.toFixed(2)}
+                    <div style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:20px; background: #f8fafc; padding: 12px; border-radius: var(--radius-sm);">
+                        📍 <strong>Address:</strong> ${o.customer_address}
+                    </div>
+                    
+                    <div style="font-size:1.2rem; font-weight:800; color:var(--primary-accent); margin-bottom:20px; text-align: right;">
+                        ₹${o.total_amount.toFixed(2)}
                     </div>
                 </div>
                 <div>
@@ -336,14 +363,19 @@
                 products.forEach(prod => {
                     const row = document.createElement("div");
                     row.className = "flex-between";
-                    row.style.padding = "8px 0";
-                    row.style.borderBottom = "1px solid var(--border-color)";
+                    row.style.padding = "16px";
+                    row.style.background = "#f8fafc";
+                    row.style.border = "1px solid var(--border-color)";
+                    row.style.borderRadius = "var(--radius-sm)";
                     
                     row.innerHTML = `
-                        <span style="font-size:0.9rem; font-weight:500; text-decoration: ${prod.is_available ? 'none' : 'line-through'}; color: ${prod.is_available ? 'var(--text-primary)' : 'var(--text-muted)'}">${prod.name}</span>
-                        <label style="position: relative; display: inline-block; width: 36px; height: 20px;">
-                            <input type="checkbox" ${prod.is_available ? 'checked' : ''} onchange="toggleStock(${prod.id}, this.checked)" style="opacity: 0; width: 0; height: 0; margin:0;" id="stock-check-${prod.id}">
-                             <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${prod.is_available ? 'var(--primary-accent)' : '#4b5563'}; transition: .3s; border-radius: 20px;"></span>
+                        <div>
+                            <span style="font-size:1rem; font-weight:700; display: block; text-decoration: ${prod.is_available ? 'none' : 'line-through'}; color: ${prod.is_available ? 'var(--text-primary)' : 'var(--text-muted)'}">${prod.name}</span>
+                            <span style="font-size:0.85rem; color:var(--text-secondary);">${prod.is_available ? '🟢 In Stock' : '🔴 Out of Stock'}</span>
+                        </div>
+                        <label class="ios-toggle">
+                            <input type="checkbox" ${prod.is_available ? 'checked' : ''} onchange="toggleStock(${prod.id}, this.checked)" id="stock-check-${prod.id}">
+                            <span class="ios-toggle-slider"></span>
                         </label>
                     `;
                     container.appendChild(row);
@@ -380,8 +412,8 @@
                 banner.style.display = "block";
                 predictions.forEach(p => {
                     const li = document.createElement("li");
-                    li.style.marginBottom = "4px";
-                    li.innerHTML = `<strong>${p.name}</strong>: ${p.message}`;
+                    li.style.marginBottom = "8px";
+                    li.innerHTML = `<strong style="color: var(--text-primary);">${p.name}</strong> &rarr; ${p.message}`;
                     list.appendChild(li);
                 });
             });
