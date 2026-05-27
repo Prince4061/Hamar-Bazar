@@ -218,6 +218,16 @@ body {
 /* ==========================================================================
    Login Screens Layout Styles (Split Panel)
    ========================================================================== */
+.mobile-text {
+    display: none;
+}
+.desktop-text {
+    display: inline;
+}
+.mobile-only-logo {
+    display: none !important;
+}
+
 .login-page-wrapper {
     min-height: 100vh;
     display: flex;
@@ -1563,4 +1573,145 @@ body {
     0% { transform: scale(1); }
     50% { transform: scale(0.95); }
     100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   Mobile Login Screens Styling Overrides (max-width: 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .app-container:has(.login-page-wrapper) {
+        padding: 12px !important;
+        gap: 0 !important;
+    }
+
+    .login-page-wrapper {
+        padding: 0 !important;
+        min-height: calc(100vh - 24px) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        background-image: radial-gradient(circle at top, var(--primary-light), transparent 70%) !important;
+    }
+    
+    .login-top-bar {
+        padding: 8px 0 !important;
+        margin-bottom: 24px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        z-index: 10 !important;
+    }
+    
+    .btn-top-switch, .btn-signup-top {
+        font-size: 0.825rem !important;
+        padding: 6px 12px !important;
+        border-radius: var(--radius-sm) !important;
+    }
+    
+    .login-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+    
+    .login-left-panel {
+        display: none !important;
+    }
+    
+    .login-right-panel {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    .login-card-desktop {
+        padding: 32px 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: var(--shadow-float) !important;
+        border: 1px solid rgba(255, 255, 255, 0.9) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        border-radius: var(--radius-xl) !important;
+    }
+    
+    .mobile-only-logo {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin-bottom: 24px !important;
+        width: 100% !important;
+        gap: 12px !important;
+    }
+    
+    .mobile-only-logo .mor-bazar-logo-container {
+        width: 44px !important;
+        height: 44px !important;
+        padding: 8px !important;
+        background: var(--primary-light) !important;
+        border-radius: var(--radius-md) !important;
+    }
+    
+    .mobile-only-logo .mor-bazar-logo-container.green-theme {
+        background: #ecfdf5 !important;
+    }
+    
+    .mobile-only-logo .brand-name-main {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .mobile-only-logo .brand-tagline-main {
+        font-size: 0.8rem !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+    }
+    
+    .mobile-text {
+        display: inline !important;
+    }
+    
+    .desktop-text {
+        display: none !important;
+    }
+    
+    .mobile-mockup-outer {
+        display: none !important;
+    }
+    
+    .staff-bottom-waves {
+        display: none !important;
+    }
+    
+    .card-title-main {
+        font-size: 1.45rem !important;
+        margin-bottom: 4px !important;
+        text-align: center !important;
+    }
+    
+    .card-subtitle-main {
+        font-size: 0.9rem !important;
+        margin-bottom: 24px !important;
+        margin-top: 4px !important;
+        text-align: center !important;
+    }
+    
+    .role-selector-row {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+    }
+    
+    .role-selector-btn {
+        padding: 10px 4px !important;
+        font-size: 0.75rem !important;
+        gap: 4px !important;
+    }
 }

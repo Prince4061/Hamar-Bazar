@@ -4,7 +4,11 @@
 <div class="login-page-wrapper">
     <!-- Top Nav Action -->
     <div class="login-top-bar">
-        <a href="/staff-login" class="btn-top-switch">Staff Login (Admin/Vendor/Rider) <i data-lucide="arrow-right" class="icon-inline" style="margin-left: 4px; margin-right: 0;"></i></a>
+        <a href="/staff-login" class="btn-top-switch">
+            <span class="desktop-text">Staff Login (Admin/Vendor/Rider)</span>
+            <span class="mobile-text">Staff Login</span>
+            <i data-lucide="arrow-right" class="icon-inline" style="margin-left: 4px; margin-right: 0;"></i>
+        </a>
         <button class="btn-signup-top" onclick="alert('Signup is automatic! Just enter any phone number to login/signup.')">New User? Sign up</button>
     </div>
 
@@ -110,6 +114,21 @@
 
             <!-- Main Desktop Card -->
             <div class="login-card-desktop">
+                <!-- Mobile brand logo (visible only on mobile) -->
+                <div class="brand-header mobile-only-logo">
+                    <div class="mor-bazar-logo-container">
+                        <svg viewBox="0 0 24 24" class="bazar-logo-svg">
+                            <path d="M8 8C8 5.79086 9.79086 4 12 4C14.2091 4 16 5.79086 16 8" stroke="#5e17eb" stroke-width="2.5" stroke-linecap="round"/>
+                            <rect x="4" y="8" width="16" height="13" rx="3.5" fill="#5e17eb"/>
+                            <path d="M8 16V13C8 12.4477 8.4477 12 9 12C9.5523 12 10 12.4477 10 13V16M10 13C10 12.4477 10.4477 12 11 12C11.5523 12 12 12.4477 12 13V16" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="brand-text-group">
+                        <span class="brand-name-main">Mor Bazar</span>
+                        <span class="brand-tagline-main">Sab kuch, aapke paas!</span>
+                    </div>
+                </div>
+
                 <h2 class="card-title-main">Welcome to Mor Bazar</h2>
                 <p class="card-subtitle-main">Login / Signup to continue</p>
 
