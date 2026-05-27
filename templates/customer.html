@@ -1,207 +1,225 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Hero Banner -->
-<div class="glass-card" style="background: linear-gradient(135deg, var(--primary-light) 0%, rgba(255,255,255,1) 100%); margin-bottom: 32px; display: flex; flex-direction: column; gap: 16px;">
-    <div class="flex-between">
-        <div>
-            <h1 class="screen-title">Hey, {{ session.get('name', 'Alice') }}!</h1>
-            <p class="screen-subtitle">Everything you need, delivered in 10 minutes.</p>
-        </div>
-        <div style="display: flex; gap: 12px;">
-            <button class="btn btn-secondary" onclick="toggleExpensesModal()" style="width: auto; padding: 10px 16px; display: flex; align-items: center; gap: 6px;"><i data-lucide="trending-up" class="icon-inline" style="margin: 0;"></i> Insights</button>
-        </div>
+
+<!-- STICKY BOTTOM CART BAR (Zepto/Blinkit Style) -->
+<div id="sticky-cart-bar" style="display: none; position: fixed; bottom: 80px; left: 16px; right: 16px; background: var(--primary-accent); color: white; padding: 16px 20px; border-radius: var(--radius-lg); box-shadow: 0 10px 25px var(--primary-glow); z-index: 999; align-items: center; justify-content: space-between; cursor: pointer; animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);" onclick="navigateTo('cart')">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="shopping-bag" style="width: 20px; height: 20px;"></i>
+        <span id="sticky-cart-count" style="font-weight: 700;">0 Items</span>
+        <span style="opacity: 0.7;">|</span>
+        <span id="sticky-cart-total" style="font-weight: 800;">₹0.00</span>
     </div>
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <span class="badge badge-status-delivered" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;"><i data-lucide="zap" class="icon-inline" style="margin: 0; width: 14px; height: 14px;"></i> Delivery: 10-15 mins</span>
-        <span class="badge badge-normal" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;"><i data-lucide="map-pin" class="icon-inline" style="margin: 0; width: 14px; height: 14px;"></i> {{ session.get('address', 'Your Location') }}</span>
+    <div style="display: flex; align-items: center; gap: 6px; font-weight: 800;">
+        View Cart <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
     </div>
 </div>
 
-<!-- VOICE CART SECTION (INT-005) -->
-<div class="voice-banner">
-    <div>
-        <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">Smart Voice Ordering <span class="badge badge-normal" style="font-size: 0.65rem;">BETA</span></h4>
-        <p id="voice-status" style="font-size: 0.95rem; color: var(--text-secondary);">Tap the mic and say "Add 2 Milk and 1 Bread"</p>
-    </div>
-    <button id="mic-btn" class="voice-mic-btn" onclick="startVoiceInput()"><i data-lucide="mic" style="width: 22px; height: 22px;"></i></button>
-</div>
-
-<!-- ACTIVE ORDER TRACKER TIMELINE (CUST-004) -->
-<div id="active-order-container" class="glass-card" style="display: none; border: 2px solid var(--primary-accent); box-shadow: var(--shadow-float);">
-    <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; display: flex; align-items: center;">
-        <span style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 6px;"><i data-lucide="package" class="icon-inline" style="margin: 0;"></i> Active Order <span id="tracking-order-id" class="text-accent">#--</span></span>
-        <span id="tracking-order-status" class="badge badge-status-pending">PENDING</span>
-    </div>
-    
-    <!-- Timeline -->
-    <div class="timeline">
-        <div id="step-pending" class="timeline-step">
-            <div class="timeline-dot"></div>
-            <div class="timeline-title">Order Placed</div>
-            <div class="timeline-time">Waiting for shop acceptance</div>
-        </div>
-        <div id="step-accepted" class="timeline-step">
-            <div class="timeline-dot"></div>
-            <div class="timeline-title">Accepted by Shop</div>
-            <div class="timeline-time">Vendor preparing items</div>
-        </div>
-        <div id="step-ready" class="timeline-step">
-            <div class="timeline-dot"></div>
-            <div class="timeline-title">Packed & Ready</div>
-            <div class="timeline-time">Awaiting delivery partner pickup</div>
-        </div>
-        <div id="step-out" class="timeline-step">
-            <div class="timeline-dot"></div>
-            <div class="timeline-title">Out for Delivery</div>
-            <div class="timeline-time">Rider carrying your parcel</div>
-        </div>
-        <div id="step-delivered" class="timeline-step">
-            <div class="timeline-dot"></div>
-            <div class="timeline-title">Delivered</div>
-            <div class="timeline-time">Enjoy your fresh purchase!</div>
-        </div>
-    </div>
-    
-    <div id="delivery-info-section" style="margin-top: 24px; padding-top: 20px; border-top: 2px dashed var(--border-color); display: none; background: #f8fafc; border-radius: var(--radius-md); padding: 16px;">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--primary-accent);"><i data-lucide="bike" style="width: 24px; height: 24px;"></i></div>
-            <div>
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 2px;">Delivery Partner Assigned</p>
-                <p style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);"><span id="rider-name">राहुल</span> • <span id="rider-phone" style="color: var(--primary-accent);">9000000001</span></p>
+<!-- ==========================================
+     1. HOMEPAGE VIEW (Categories Grid)
+     ========================================== -->
+<div id="view-home" class="spa-view">
+    <!-- Hero Banner -->
+    <div id="homepage-hero">
+        <div class="glass-card" style="background: linear-gradient(135deg, var(--primary-light) 0%, rgba(255,255,255,1) 100%); margin-bottom: 32px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="flex-between">
+                <div>
+                    <h1 class="screen-title">Hey, {{ session.get('name', 'Alice') }}!</h1>
+                    <p class="screen-subtitle">Everything you need, delivered in 10 minutes.</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="badge badge-status-delivered" style="font-size: 0.85rem; display: flex; align-items: center; gap: 4px;"><i data-lucide="zap" class="icon-inline" style="margin: 0; width: 14px; height: 14px;"></i> Delivery: 10-15 mins</span>
             </div>
         </div>
-        <div style="background: rgba(16, 185, 129, 0.1); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.2); display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 600; color: var(--text-secondary);">Delivery Verification OTP</span>
-            <span id="delivery-otp-display" style="font-size: 1.5rem; font-weight: 800; color: var(--emerald-green); letter-spacing: 4px;">----</span>
+    </div>
+
+    <!-- CATEGORY SECTION -->
+    <div id="homepage-categories">
+        <div class="flex-between mb-sm">
+            <h3 style="font-size: 1.5rem; font-weight: 800;">Explore Categories</h3>
+        </div>
+        <div class="category-grid">
+            <div class="category-card" onclick="selectCategory('KIRANA', 1)">
+                <i data-lucide="shopping-basket" class="category-icon-lucide"></i>
+                <span class="category-name">Grocery</span>
+                <span class="category-desc">Apna Bazaar</span>
+            </div>
+            <div class="category-card" onclick="selectCategory('CAKES', 2)">
+                <i data-lucide="cake" class="category-icon-lucide"></i>
+                <span class="category-name">Cakes</span>
+                <span class="category-desc">Bakers Table</span>
+            </div>
+            <div class="category-card" onclick="selectCategory('VEGGIES', 3)">
+                <i data-lucide="leaf" class="category-icon-lucide"></i>
+                <span class="category-name">Veggies</span>
+                <span class="category-desc">Fresh & Green</span>
+            </div>
+            <div class="category-card" onclick="selectCategory('ELECTRONICS', 4)">
+                <i data-lucide="cpu" class="category-icon-lucide"></i>
+                <span class="category-name">Electronics</span>
+                <span class="category-desc">ElectroWorld</span>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- CATEGORY SECTION (CUST-001) -->
-<div class="flex-between mb-sm">
-    <h3 style="font-size: 1.5rem; font-weight: 800;">Explore Categories</h3>
-</div>
-<div class="category-grid">
-    <div class="category-card" onclick="selectCategory('KIRANA', 1)">
-        <i data-lucide="shopping-basket" class="category-icon-lucide"></i>
-        <span class="category-name">Grocery</span>
-        <span class="category-desc">Apna Bazaar</span>
-    </div>
-    <div class="category-card" onclick="selectCategory('CAKES', 2)">
-        <i data-lucide="cake" class="category-icon-lucide"></i>
-        <span class="category-name">Cakes</span>
-        <span class="category-desc">Bakers Table</span>
-    </div>
-    <div class="category-card" onclick="selectCategory('VEGGIES', 3)">
-        <i data-lucide="leaf" class="category-icon-lucide"></i>
-        <span class="category-name">Veggies</span>
-        <span class="category-desc">Fresh & Green</span>
-    </div>
-    <div class="category-card" onclick="selectCategory('ELECTRONICS', 4)">
-        <i data-lucide="cpu" class="category-icon-lucide"></i>
-        <span class="category-name">Electronics</span>
-        <span class="category-desc">ElectroWorld</span>
+<!-- ==========================================
+     2. SHOP/PRODUCTS VIEW (Shop Products)
+     ========================================== -->
+<div id="view-shop" class="spa-view" style="display: none;">
+    <div class="glass-card" id="shop-products-panel">
+        <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="btn btn-secondary" onclick="goBackToHome()" style="width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; margin: 0; border-radius: 50%;"><i data-lucide="arrow-left" style="width: 20px; height: 20px; margin: 0;"></i></button>
+                <h3 id="current-shop-name" style="font-size: 1.25rem; font-weight: 800; margin: 0;">Shop Name</h3>
+            </div>
+            <span id="current-shop-badge" class="badge badge-normal text-accent" style="background: var(--primary-light); margin: 0;">Exclusive Partner</span>
+        </div>
+        <div class="products-grid" id="products-container">
+            <!-- Loaded dynamically via JS -->
+        </div>
     </div>
 </div>
 
-<!-- SHOP & PRODUCT LIST + CART WORKSPACE -->
-<div class="shop-section">
-    <!-- Products Panel -->
-    <div>
-        <div class="glass-card" id="shop-products-panel" style="display: none;">
-            <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px;">
-                <h3 id="current-shop-name" style="font-size: 1.25rem; font-weight: 800;">Shop Name</h3>
-                <span id="current-shop-badge" class="badge badge-normal text-accent" style="background: var(--primary-light);">Exclusive Partner</span>
-            </div>
-            <div class="products-grid" id="products-container">
-                <!-- Loaded dynamically via JS -->
+<!-- ==========================================
+     3. CART VIEW (Dedicated Cart Screen)
+     ========================================== -->
+<div id="view-cart" class="spa-view" style="display: none;">
+    <div class="glass-card">
+        <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="btn btn-secondary" onclick="goBackToHome()" style="width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; margin: 0; border-radius: 50%;"><i data-lucide="arrow-left" style="width: 20px; height: 20px; margin: 0;"></i></button>
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px;"><i data-lucide="shopping-bag" class="icon-inline" style="margin: 0;"></i> Your Cart</h3>
             </div>
         </div>
         
-        <!-- Empty State for Shop selection -->
-        <div class="glass-card" id="shop-placeholder" style="text-align: center; padding: 80px 20px; border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <i data-lucide="compass" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--primary-accent); margin-bottom: 16px;"></i>
-            <h4 style="font-size: 1.25rem; font-weight: 800;">Select a category to browse</h4>
-            <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 8px;">Enjoy 10-minute delivery from our premium monopolistic partners.</p>
+        <div id="cart-items-container" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Cart items render here -->
+            <div style="text-align: center; padding: 40px 0;">
+                <i data-lucide="shopping-cart" style="width: 40px; height: 40px; stroke-width: 1.5; color: var(--text-muted); margin-bottom: 12px; display: inline-block;"></i>
+                <p style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">Your cart is empty.</p>
+            </div>
+        </div>
+        
+        <!-- SMART RECOMMENDATION BOX (INT-001) -->
+        <div id="recommendation-box" style="display: none; background: #faf5ff; border: 1px solid #d8b4fe; padding: 16px; margin-bottom: 24px; border-radius: var(--radius-md);">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                <i data-lucide="sparkles" class="icon-inline" style="margin: 0; width: 14px; height: 14px; color: var(--primary-accent);"></i>
+                <span style="font-size: 0.8rem; color: var(--primary-accent); font-weight: 800; text-transform: uppercase;">AI Suggestion</span>
+            </div>
+            <div class="flex-between">
+                <div>
+                    <span id="rec-item-name" style="font-weight: 700; font-size: 0.95rem;">Butter</span>
+                    <span id="rec-item-price" style="font-size: 0.85rem; color: var(--text-secondary); display: block;">₹60.0</span>
+                </div>
+                <button class="btn btn-primary" id="rec-add-btn" style="width: auto; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px;">+ Add</button>
+            </div>
+        </div>
+
+        <div id="cart-summary-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px;">
+            <div class="flex-between mb-sm" style="font-size: 0.95rem;">
+                <span style="color: var(--text-secondary);">Subtotal</span>
+                <span id="cart-subtotal" style="font-weight: 600;">₹0.00</span>
+            </div>
+            <div class="flex-between mb-sm" style="font-size: 0.95rem;">
+                <span style="color: var(--text-secondary);">Handling & GST (18%)</span>
+                <span id="cart-gst" style="font-weight: 600;">₹0.00</span>
+            </div>
+            <div class="flex-between mb-sm" style="font-size: 0.95rem;">
+                <span style="color: var(--text-secondary);">Delivery Fee</span>
+                <span style="font-weight: 700; color: var(--emerald-green);">FREE</span>
+            </div>
+            <div class="flex-between mt-md" style="font-size: 1.25rem; font-weight: 800; border-top: 2px dashed var(--border-color); padding-top: 16px;">
+                <span>To Pay</span>
+                <span id="cart-grandtotal" class="text-accent">₹0.00</span>
+            </div>
+            
+            <!-- Checkout forms -->
+            <div class="form-group mt-md">
+                <label class="form-label">Delivery Speed (INT-002)</label>
+                <div style="display: flex; gap: 12px;">
+                    <label style="flex: 1; text-align: center; border: 2px solid var(--primary-accent); background: var(--primary-light); padding: 12px; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 0.95rem;">
+                        <input type="radio" name="priority" value="NORMAL" checked style="margin: 0;"> Standard
+                    </label>
+                    <label style="flex: 1; text-align: center; border: 2px solid #fecaca; background: var(--ruby-light); padding: 12px; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--ruby-danger); font-weight: 700; font-size: 0.95rem;">
+                        <input type="radio" name="priority" value="URGENT" style="margin: 0;"> <i data-lucide="zap" class="icon-inline" style="margin: 0; width: 14px; height: 14px; color: var(--ruby-danger);"></i> Priority
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Delivery Address</label>
+                <input type="text" id="address-input" class="form-input" placeholder="Flat number, Street area, Landmark">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select id="payment-input" class="form-input">
+                    <option value="ONLINE">Pay Online (Simulated)</option>
+                    <option value="COD">Cash On Delivery</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary mt-md w-full" style="font-size: 1.1rem; padding: 16px;" onclick="checkoutOrder()">Place Order</button>
         </div>
     </div>
+</div>
 
-    <!-- Cart Drawer (Sticky on Desktop) -->
-    <div style="position: sticky; top: 100px;">
-        <div class="glass-card">
-            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; align-items: center; gap: 8px;"><i data-lucide="shopping-bag" class="icon-inline" style="margin: 0;"></i> Your Cart</h3>
-            
-            <div id="cart-items-container" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
-                <!-- Cart items render here -->
-                <div style="text-align: center; padding: 40px 0;">
-                    <i data-lucide="shopping-cart" style="width: 40px; height: 40px; stroke-width: 1.5; color: var(--text-muted); margin-bottom: 12px; display: inline-block;"></i>
-                    <p style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">Your cart is empty.</p>
-                </div>
+<!-- ==========================================
+     4. ORDER TRACKER VIEW (Active Tracker Screen)
+     ========================================== -->
+<div id="view-tracker" class="spa-view" style="display: none;">
+    <div class="glass-card" id="active-order-container" style="border: 2px solid var(--primary-accent); box-shadow: var(--shadow-float);">
+        <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; display: flex; align-items: center;">
+            <span style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 6px;"><i data-lucide="package" class="icon-inline" style="margin: 0;"></i> Active Order <span id="tracking-order-id" class="text-accent">#--</span></span>
+            <span id="tracking-order-status" class="badge badge-status-pending">PENDING</span>
+        </div>
+        
+        <!-- Timeline -->
+        <div class="timeline">
+            <div id="step-pending" class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Order Placed</div>
+                <div class="timeline-time">Waiting for shop acceptance</div>
             </div>
-            
-            <!-- SMART RECOMMENDATION BOX (INT-001) -->
-            <div id="recommendation-box" style="display: none; background: #faf5ff; border: 1px solid #d8b4fe; padding: 16px; margin-bottom: 24px; border-radius: var(--radius-md);">
-                <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
-                    <i data-lucide="sparkles" class="icon-inline" style="margin: 0; width: 14px; height: 14px; color: var(--primary-accent);"></i>
-                    <span style="font-size: 0.8rem; color: var(--primary-accent); font-weight: 800; text-transform: uppercase;">AI Suggestion</span>
-                </div>
-                <div class="flex-between">
-                    <div>
-                        <span id="rec-item-name" style="font-weight: 700; font-size: 0.95rem;">Butter</span>
-                        <span id="rec-item-price" style="font-size: 0.85rem; color: var(--text-secondary); display: block;">₹60.0</span>
-                    </div>
-                    <button class="btn btn-primary" id="rec-add-btn" style="width: auto; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px;">+ Add</button>
-                </div>
+            <div id="step-accepted" class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Accepted by Shop</div>
+                <div class="timeline-time">Vendor preparing items</div>
             </div>
-
-            <div id="cart-summary-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                <div class="flex-between mb-sm" style="font-size: 0.95rem;">
-                    <span style="color: var(--text-secondary);">Subtotal</span>
-                    <span id="cart-subtotal" style="font-weight: 600;">₹0.00</span>
-                </div>
-                <div class="flex-between mb-sm" style="font-size: 0.95rem;">
-                    <span style="color: var(--text-secondary);">Handling & GST</span>
-                    <span id="cart-gst" style="font-weight: 600;">₹0.00</span>
-                </div>
-                <div class="flex-between mb-sm" style="font-size: 0.95rem;">
-                    <span style="color: var(--text-secondary);">Delivery Fee</span>
-                    <span style="font-weight: 700; color: var(--emerald-green);">FREE</span>
-                </div>
-                <div class="flex-between mt-md" style="font-size: 1.25rem; font-weight: 800; border-top: 2px dashed var(--border-color); padding-top: 16px;">
-                    <span>To Pay</span>
-                    <span id="cart-grandtotal" class="text-accent">₹0.00</span>
-                </div>
-                
-                <!-- Checkout forms -->
-                <div class="form-group mt-md">
-                    <label class="form-label">Delivery Speed (INT-002)</label>
-                    <div style="display: flex; gap: 12px;">
-                        <label style="flex: 1; text-align: center; border: 2px solid var(--primary-accent); background: var(--primary-light); padding: 12px; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; font-size: 0.95rem;">
-                            <input type="radio" name="priority" value="NORMAL" checked style="margin: 0;"> Standard
-                        </label>
-                        <label style="flex: 1; text-align: center; border: 2px solid #fecaca; background: var(--ruby-light); padding: 12px; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--ruby-danger); font-weight: 700; font-size: 0.95rem;">
-                            <input type="radio" name="priority" value="URGENT" style="margin: 0;"> <i data-lucide="zap" class="icon-inline" style="margin: 0; width: 14px; height: 14px; color: var(--ruby-danger);"></i> Priority
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Delivery Address</label>
-                    <input type="text" id="address-input" class="form-input" placeholder="Flat number, Street area, Landmark">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Payment Method</label>
-                    <select id="payment-input" class="form-input">
-                        <option value="ONLINE">Pay Online (Simulated)</option>
-                        <option value="COD">Cash On Delivery</option>
-                    </select>
-                </div>
-                
-                <button class="btn btn-primary mt-md w-full" style="font-size: 1.1rem; padding: 16px;" onclick="checkoutOrder()">Place Order</button>
+            <div id="step-ready" class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Packed & Ready</div>
+                <div class="timeline-time">Awaiting delivery partner pickup</div>
+            </div>
+            <div id="step-out" class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Out for Delivery</div>
+                <div class="timeline-time">Rider carrying your parcel</div>
+            </div>
+            <div id="step-delivered" class="timeline-step">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">Delivered</div>
+                <div class="timeline-time">Enjoy your fresh purchase!</div>
             </div>
         </div>
+        
+        <div id="delivery-info-section" style="margin-top: 24px; padding-top: 20px; border-top: 2px dashed var(--border-color); display: none; background: #f8fafc; border-radius: var(--radius-md); padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: var(--primary-accent);"><i data-lucide="bike" style="width: 24px; height: 24px;"></i></div>
+                <div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 2px;">Delivery Partner Assigned</p>
+                    <p style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);"><span id="rider-name">राहुल</span> • <span id="rider-phone" style="color: var(--primary-accent);">9000000001</span></p>
+                </div>
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: var(--text-secondary);">Delivery Verification OTP</span>
+                <span id="delivery-otp-display" style="font-size: 1.5rem; font-weight: 800; color: var(--emerald-green); letter-spacing: 4px;">----</span>
+            </div>
+        </div>
+        
+        <button class="btn btn-secondary mt-md w-full" onclick="navigateTo('home')">Back to Home</button>
     </div>
 </div>
 
@@ -219,7 +237,9 @@
     </div>
 </div>
 
-<!-- Scripts for Client actions -->
+<!-- ==========================================
+     Scripts for Client SPA routing & interactions
+     ========================================== -->
 <script>
     const customerId = {{ active_user_id }};
     let currentShopId = null;
@@ -232,6 +252,9 @@
         const cachedOrder = localStorage.getItem(`active_order_${customerId}`);
         if (cachedOrder) {
             startTracking(JSON.parse(cachedOrder).order_id);
+            navigateTo('tracker');
+        } else {
+            navigateTo('home');
         }
         
         // Auto fill address
@@ -242,6 +265,75 @@
         {% endfor %}
     });
 
+    // SPA Navigation Controller
+    function navigateTo(viewName) {
+        // Hide all views
+        document.querySelectorAll(".spa-view").forEach(el => el.style.display = "none");
+        
+        // Show selected view
+        if (viewName === 'home') {
+            document.getElementById("view-home").style.display = "block";
+            document.getElementById("sticky-cart-bar").style.display = "none";
+            updateBottomNavActive('home');
+        } else if (viewName === 'shop') {
+            document.getElementById("view-shop").style.display = "block";
+            updateStickyCartBar();
+            updateBottomNavActive('home');
+        } else if (viewName === 'cart') {
+            document.getElementById("view-cart").style.display = "block";
+            document.getElementById("sticky-cart-bar").style.display = "none";
+            updateBottomNavActive('cart');
+        } else if (viewName === 'tracker') {
+            document.getElementById("view-tracker").style.display = "block";
+            document.getElementById("sticky-cart-bar").style.display = "none";
+            updateBottomNavActive('home');
+        }
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        refreshIcons();
+    }
+
+    // Dynamic Navigation Class Manager
+    function updateBottomNavActive(tab) {
+        document.querySelectorAll(".mobile-bottom-nav a").forEach(el => {
+            el.classList.remove("active");
+        });
+        if (tab === 'home') {
+            const link = Array.from(document.querySelectorAll(".mobile-bottom-nav a")).find(el => el.innerText.includes("Home"));
+            if (link) link.classList.add("active");
+        } else if (tab === 'cart') {
+            const link = Array.from(document.querySelectorAll(".mobile-bottom-nav a")).find(el => el.innerText.includes("Cart"));
+            if (link) link.classList.add("active");
+        }
+    }
+
+    // Zepto Style Bottom Float Cart Bar Update
+    function updateStickyCartBar() {
+        const keys = Object.keys(cart);
+        const bar = document.getElementById("sticky-cart-bar");
+        
+        // Only show floating bar on the products list page
+        if (keys.length === 0 || document.getElementById("view-shop").style.display === "none") {
+            bar.style.display = "none";
+            return;
+        }
+        
+        let count = 0;
+        let total = 0;
+        keys.forEach(k => {
+            count += cart[k].quantity;
+            total += cart[k].price * cart[k].quantity;
+        });
+        
+        const gst = total * 0.18;
+        const grandTotal = total + gst;
+        
+        document.getElementById("sticky-cart-count").innerText = `${count} Item${count > 1 ? 's' : ''}`;
+        document.getElementById("sticky-cart-total").innerText = `₹${grandTotal.toFixed(2)}`;
+        bar.style.display = "flex";
+        refreshIcons();
+    }
+
     // Rule-based Recommendation Mapping (INT-001)
     const recRules = {
         'milk': { id: 3, name: 'Amul Butter 100g', price: 60.0 },
@@ -250,17 +342,14 @@
         'battery': { id: 15, name: 'Fast USB-C Cable 1.5m', price: 150.0 }
     };
 
+    // Category Selector / Shop Router
     function selectCategory(category, shopId) {
-        // Toggle selected category card
         document.querySelectorAll(".category-card").forEach((card, index) => {
             if (index + 1 === shopId) card.classList.add("selected");
             else card.classList.remove("selected");
         });
 
         currentShopId = shopId;
-        document.getElementById("shop-placeholder").style.display = "none";
-        document.getElementById("shop-products-panel").style.display = "block";
-        document.getElementById("shop-products-panel").classList.add("fade-in-up");
         
         // Fetch products
         fetch(`/api/shops/${shopId}/products`)
@@ -278,6 +367,16 @@
             4: "ElectroWorld Tech"
         };
         document.getElementById("current-shop-name").innerText = shopNames[shopId];
+        
+        // Transition screen
+        navigateTo('shop');
+    }
+
+    // Back to Homepage Router
+    function goBackToHome() {
+        navigateTo('home');
+        document.querySelectorAll(".category-card").forEach(card => card.classList.remove("selected"));
+        currentShopId = null;
     }
 
     function renderProducts() {
@@ -289,8 +388,6 @@
             card.className = "product-card fade-in-up";
             
             const qty = cart[prod.id] ? cart[prod.id].quantity : 0;
-            
-            // Random stock status logic for premium feel
             const isLowStock = Math.random() > 0.8;
             const stockBadge = isLowStock ? `<span style="font-size: 0.7rem; color: var(--ruby-danger); font-weight: 700; background: var(--ruby-light); padding: 2px 6px; border-radius: 4px;">Only few left</span>` : ``;
 
@@ -344,6 +441,7 @@
 
     function updateCartUI() {
         renderProducts();
+        updateStickyCartBar();
         
         const container = document.getElementById("cart-items-container");
         container.innerHTML = "";
@@ -385,7 +483,6 @@
             const item_name_lower = cart[key].name.toLowerCase();
             for (let word in recRules) {
                 if (item_name_lower.includes(word)) {
-                    // Check if recommendation item is not already in cart
                     const recProd = recRules[word];
                     if (!cart[recProd.id]) {
                         recFound = recProd;
@@ -403,12 +500,10 @@
             document.getElementById("rec-item-name").innerText = recFound.name;
             document.getElementById("rec-item-price").innerText = `₹${recFound.price.toFixed(2)}`;
             document.getElementById("rec-add-btn").onclick = () => {
-                // If it is in productsList, add, else pull it from the category list
                 const inList = productsList.find(p => p.id === recFound.id);
                 if (inList) {
                     addToCart(recFound.id, 1);
                 } else {
-                    // Force inject recommendation item to cart
                     cart[recFound.id] = {
                         id: recFound.id,
                         name: recFound.name,
@@ -475,21 +570,17 @@
                 alert(data.error);
             } else {
                 alert("Payment Successful! Order Confirmed.");
-                // Clear cart
                 cart = {};
                 updateCartUI();
-                // Cache active order ID
                 localStorage.setItem(`active_order_${customerId}`, JSON.stringify({ order_id: data.order_id }));
                 startTracking(data.order_id);
-                document.getElementById("active-order-container").scrollIntoView({behavior: 'smooth'});
+                navigateTo('tracker');
             }
         });
     }
 
     // Timeline Live Tracking (CUST-004)
     function startTracking(orderId) {
-        document.getElementById("active-order-container").style.display = "block";
-        document.getElementById("active-order-container").classList.add("fade-in-up");
         document.getElementById("tracking-order-id").innerText = `#${orderId}`;
         
         if (trackingInterval) clearInterval(trackingInterval);
@@ -507,7 +598,6 @@
                     const statusBadge = document.getElementById("tracking-order-status");
                     statusBadge.innerText = status;
                     
-                    // Reset classes
                     const steps = ["step-pending", "step-accepted", "step-ready", "step-out", "step-delivered"];
                     steps.forEach(s => {
                         document.getElementById(s).classList.remove("active", "completed");
@@ -541,12 +631,10 @@
                         document.getElementById("step-out").classList.add("completed");
                         document.getElementById("step-delivered").classList.add("completed");
                         
-                        // Clear active order cache
                         localStorage.removeItem(`active_order_${customerId}`);
                         clearInterval(trackingInterval);
                     }
                     
-                    // Display OTP & Delivery Partner detail (INT-008)
                     const devSec = document.getElementById("delivery-info-section");
                     if (data.delivery_boy_id) {
                         devSec.style.display = "block";
@@ -561,10 +649,15 @@
         };
         
         poll();
-        trackingInterval = setInterval(poll, 10000); // Poll every 10 seconds (PRD requirement)
+        trackingInterval = setInterval(poll, 10000);
     }
 
-    // Monthly Expense Tracker Modal (INT-009)
+    // Bottom Navbar Cart Router Callback
+    function showCartFromNav() {
+        navigateTo('cart');
+    }
+
+    // Monthly Expense Tracker Modal
     function toggleExpensesModal() {
         const modal = document.getElementById("expense-modal");
         if (modal.style.display === "none" || !modal.style.display) {
@@ -610,113 +703,6 @@
                 
                 container.innerHTML = barsHtml;
             });
-    }
-
-    // Speech recognition parser (INT-005)
-    let recognition = null;
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRec();
-        recognition.continuous = false;
-        recognition.lang = 'en-IN';
-        
-        recognition.onstart = () => {
-            document.getElementById("mic-btn").classList.add("listening");
-            document.getElementById("voice-status").innerText = "Listening... Speak now.";
-            document.getElementById("voice-status").style.color = "var(--ruby-danger)";
-        };
-        
-        recognition.onend = () => {
-            document.getElementById("mic-btn").classList.remove("listening");
-            document.getElementById("voice-status").style.color = "var(--text-secondary)";
-        };
-        
-        recognition.onresult = (event) => {
-            const speechResult = event.results[0][0].transcript.toLowerCase();
-            document.getElementById("voice-status").innerText = `Recognized: "${speechResult}"`;
-            parseVoiceCommand(speechResult);
-        };
-        
-        recognition.onerror = (e) => {
-            document.getElementById("voice-status").innerText = "Speech error. Please try again.";
-            console.error(e);
-        };
-    }
-
-    function startVoiceInput() {
-        if (!recognition) {
-            alert("Speech recognition is not supported in this browser. Try Chrome.");
-            return;
-        }
-        // Force routing to Kirana (Shop 1) to fetch products list first if not chosen
-        if (!currentShopId) {
-            selectCategory('KIRANA', 1);
-        }
-        
-        recognition.start();
-    }
-
-    function parseVoiceCommand(text) {
-        const vocabulary = {
-            'milk': 1, 'bread': 2, 'butter': 3, 'sugar': 4, 'tea': 5,
-            'chocolate': 6, 'truffle': 6, 'red velvet': 7, 'velvet': 7,
-            'candle': 8, 'candles': 8, 'cap': 9, 'potato': 10, 'tomato': 11,
-            'onion': 12, 'coriander': 13, 'lemon': 14, 'cable': 15,
-            'usb': 15, 'earphone': 16, 'earphones': 16, 'battery': 17,
-            'duracell': 17, 'plug': 18
-        };
-        
-        const segments = text.split(/and|,/);
-        let itemsAdded = [];
-        
-        segments.forEach(seg => {
-            seg = seg.trim();
-            const numMatch = seg.match(/\d+/);
-            const qty = numMatch ? parseInt(numMatch[0]) : 1;
-            let cleanSeg = seg.replace(/\d+/g, '').trim();
-            
-            let foundProdId = null;
-            for (let keyword in vocabulary) {
-                if (cleanSeg.includes(keyword)) {
-                    foundProdId = vocabulary[keyword];
-                    break;
-                }
-            }
-            
-            if (foundProdId) {
-                let itemShop = 1;
-                if (foundProdId >= 6 && foundProdId <= 9) itemShop = 2;
-                else if (foundProdId >= 10 && foundProdId <= 14) itemShop = 3;
-                else if (foundProdId >= 15) itemShop = 4;
-                
-                if (currentShopId !== itemShop) {
-                    selectCategory(itemShop === 1 ? 'KIRANA' : itemShop === 2 ? 'CAKES' : itemShop === 3 ? 'VEGGIES' : 'ELECTRONICS', itemShop);
-                }
-                
-                setTimeout(() => {
-                    const matchedProd = productsList.find(p => p.id === foundProdId);
-                    if (matchedProd) {
-                        addToCart(foundProdId, qty);
-                        itemsAdded.push(`${qty}x ${matchedProd.name}`);
-                        document.getElementById("voice-status").innerText = `Added: ${itemsAdded.join(", ")}`;
-                        document.getElementById("voice-status").style.color = "var(--emerald-green)";
-                    } else {
-                        fetch(`/api/shops/${itemShop}/products`)
-                            .then(res => res.json())
-                            .then(prods => {
-                                productsList = prods;
-                                const p = productsList.find(x => x.id === foundProdId);
-                                if (p) addToCart(foundProdId, qty);
-                            });
-                    }
-                }, 400);
-            }
-        });
-        
-        if (itemsAdded.length === 0) {
-            document.getElementById("voice-status").innerText = "Could not map speech. Try saying 'Add 2 Milk'.";
-            document.getElementById("voice-status").style.color = "var(--ruby-danger)";
-        }
     }
 </script>
 {% endblock %}

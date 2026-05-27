@@ -855,6 +855,29 @@ body {
     margin-bottom: 40px;
 }
 
+@media (max-width: 768px) {
+    .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    .category-card {
+        padding: 16px 12px;
+    }
+    .category-icon-lucide {
+        width: 32px;
+        height: 32px;
+        margin-bottom: 8px;
+    }
+    .category-name {
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+    }
+    .category-desc {
+        font-size: 0.75rem;
+    }
+}
+
 .category-card {
     background: var(--card-solid);
     border: 1px solid var(--border-color);
@@ -1525,4 +1548,9 @@ body {
 .category-card:hover .category-icon-lucide {
     transform: scale(1.15) rotate(-5deg);
     color: var(--primary-accent-hover);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100px) scale(0.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
 }

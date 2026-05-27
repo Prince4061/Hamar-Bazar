@@ -3,10 +3,19 @@ import sqlite3
 import os
 import random
 from datetime import datetime, timedelta
+from database import init_db, seed_db
 
 app = Flask(__name__)
 app.secret_key = 'hyperlocal_monopolistic_secret_key_12345'
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'marketplace.db')
+
+# Automatically initialize and seed the database if it doesn't exist or is empty
+try:
+    init_db()
+    seed_db()
+except Exception as e:
+    app.logger.warning(f"Database auto-initialization failed: {e}")
+
 
 def get_db():
     db = getattr(g, '_database', None)
