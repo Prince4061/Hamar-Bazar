@@ -806,6 +806,7 @@ def admin_create_shop():
     commission_pct = float(data.get('commission_pct', 5.0))
     username = data.get('username', '').strip().lower()
     password = data.get('password', '').strip()
+    image_url = data.get('image_url', '').strip()
     
     if not shop_name or not category or not username or not password:
         return jsonify({'success': False, 'error': 'All fields are required.'}), 400
@@ -814,9 +815,9 @@ def admin_create_shop():
     cursor = db.cursor()
     try:
         cursor.execute('''
-            INSERT INTO shops (shop_name, category, commission_pct, username, password)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (shop_name, category, commission_pct, username, password))
+            INSERT INTO shops (shop_name, category, commission_pct, username, password, image_url)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (shop_name, category, commission_pct, username, password, image_url or None))
         db.commit()
         
         # Seed default products for this new shop
@@ -849,6 +850,7 @@ def admin_modify_shop(shop_id):
         commission_pct = float(data.get('commission_pct', 5.0))
         username = data.get('username', '').strip().lower()
         password = data.get('password', '').strip()
+        image_url = data.get('image_url', '').strip()
         
         if not shop_name or not category or not username or not password:
             return jsonify({'success': False, 'error': 'All fields are required.'}), 400
@@ -856,9 +858,9 @@ def admin_modify_shop(shop_id):
         try:
             cursor.execute('''
                 UPDATE shops 
-                SET shop_name = ?, category = ?, commission_pct = ?, username = ?, password = ?
+                SET shop_name = ?, category = ?, commission_pct = ?, username = ?, password = ?, image_url = ?
                 WHERE id = ?
-            ''', (shop_name, category, commission_pct, username, password, shop_id))
+            ''', (shop_name, category, commission_pct, username, password, image_url or None, shop_id))
             db.commit()
             return jsonify({'success': True, 'message': 'Vendor updated successfully.'})
         except Exception as e:

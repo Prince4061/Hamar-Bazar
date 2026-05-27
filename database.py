@@ -37,7 +37,8 @@ def init_db():
         category TEXT UNIQUE NOT NULL,
         commission_pct REAL DEFAULT 5.0,
         username TEXT,
-        password TEXT NOT NULL DEFAULT '123456'
+        password TEXT NOT NULL DEFAULT '123456',
+        image_url TEXT
     )
     ''')
     
@@ -47,6 +48,15 @@ def init_db():
         try:
             cursor.execute("ALTER TABLE shops ADD COLUMN username TEXT")
             cursor.execute("ALTER TABLE shops ADD COLUMN password TEXT NOT NULL DEFAULT '123456'")
+            conn.commit()
+        except Exception:
+            pass
+
+    try:
+        cursor.execute("SELECT image_url FROM shops LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE shops ADD COLUMN image_url TEXT")
             conn.commit()
         except Exception:
             pass
@@ -183,6 +193,12 @@ def seed_db():
     cursor.execute("UPDATE shops SET username = 'veggies', password = '123456' WHERE category = 'VEGGIES' AND username IS NULL")
     cursor.execute("UPDATE shops SET username = 'electronics', password = '123456' WHERE category = 'ELECTRONICS' AND username IS NULL")
             
+    # Populate beautiful Unsplash category images for seeded shops if empty
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60' WHERE category = 'KIRANA' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=60' WHERE category = 'CAKES' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60' WHERE category = 'VEGGIES' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=500&auto=format&fit=crop&q=60' WHERE category = 'ELECTRONICS' AND image_url IS NULL")
+
     conn.commit()
     
     # Fetch shop IDs for product mapping

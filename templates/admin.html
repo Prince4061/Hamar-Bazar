@@ -127,6 +127,11 @@
             <input type="text" id="staff-form-extra" class="form-input" placeholder="e.g. KIRANA">
         </div>
 
+        <div class="form-group" id="staff-group-image">
+            <label class="form-label">Category Image URL</label>
+            <input type="text" id="staff-form-image" class="form-input" placeholder="e.g. https://images.unsplash.com/...">
+        </div>
+
         <div class="form-group" id="staff-group-commission">
             <label class="form-label">Commission Percentage (%)</label>
             <input type="number" id="staff-form-commission" class="form-input" placeholder="e.g. 5.0" step="0.1" value="5.0">
@@ -656,6 +661,7 @@
         
         const groupName = document.getElementById("staff-group-name");
         const groupExtra = document.getElementById("staff-group-extra");
+        const groupImage = document.getElementById("staff-group-image");
         const groupComm = document.getElementById("staff-group-commission");
         
         const lblName = document.getElementById("lbl-staff-name");
@@ -667,6 +673,7 @@
         if (role === 'vendor') {
             groupName.style.display = 'block';
             groupExtra.style.display = 'block';
+            if (groupImage) groupImage.style.display = 'block';
             groupComm.style.display = 'block';
             lblName.innerText = "Shop Name";
             lblExtra.innerText = "Category Name (Unique)";
@@ -675,6 +682,7 @@
         } else if (role === 'delivery') {
             groupName.style.display = 'block';
             groupExtra.style.display = 'block';
+            if (groupImage) groupImage.style.display = 'none';
             groupComm.style.display = 'none';
             lblName.innerText = "Rider Name";
             lblExtra.innerText = "Phone Number (Unique)";
@@ -683,6 +691,7 @@
         } else {
             groupName.style.display = 'none';
             groupExtra.style.display = 'none';
+            if (groupImage) groupImage.style.display = 'none';
             groupComm.style.display = 'none';
         }
     }
@@ -692,6 +701,7 @@
         const role = document.getElementById("staff-form-role").value;
         const name = document.getElementById("staff-form-name").value.trim();
         const extra = document.getElementById("staff-form-extra").value.trim();
+        const image = document.getElementById("staff-form-image").value.trim();
         const commission = document.getElementById("staff-form-commission").value;
         const username = document.getElementById("staff-form-username").value.trim();
         const password = document.getElementById("staff-form-password").value.trim();
@@ -719,6 +729,7 @@
             payload.shop_name = name;
             payload.category = extra;
             payload.commission_pct = parseFloat(commission);
+            payload.image_url = image;
         } else if (role === 'delivery') {
             payload.name = name;
             payload.phone = extra;
@@ -769,6 +780,7 @@
             document.getElementById("staff-form-name").value = member.shop_name;
             document.getElementById("staff-form-extra").value = member.category;
             document.getElementById("staff-form-commission").value = member.commission_pct;
+            document.getElementById("staff-form-image").value = member.image_url || '';
         } else if (role === 'delivery') {
             document.getElementById("staff-form-name").value = member.name;
             document.getElementById("staff-form-extra").value = member.phone;
@@ -802,6 +814,7 @@
         
         document.getElementById("staff-form-name").value = "";
         document.getElementById("staff-form-extra").value = "";
+        document.getElementById("staff-form-image").value = "";
         document.getElementById("staff-form-commission").value = "5.0";
         document.getElementById("staff-form-username").value = "";
         document.getElementById("staff-form-password").value = "123456";
