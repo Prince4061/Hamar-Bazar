@@ -137,103 +137,72 @@ def staff_login():
             data = request.form
         role = data.get('role', '').strip()  # admin, vendor, delivery
         identifier = data.get('identifier', '').strip()
+        password = data.get('password', '').strip()
         
-        if not role or not identifier:
-            return jsonify({'success': False, 'error': 'Role and ID are required.'})
+        if not role or not identifier or not password:
+            return jsonify({'success': False, 'error': 'Role, username/identifier and password are required.'})
             
         db = get_db()
         cursor = db.cursor()
         
         if role == 'admin':
-            # Admin login
-            session['role'] = 'admin'
-            session['role_id'] = 0
-            session['name'] = 'Super Admin'
-            return jsonify({'success': True, 'redirect': '/admin'})
-            
+            # Strict Admin login from admins table
+            cursor.execute("SELECT * FROM admins WHERE username = ?", (identifier,))
+            admin = cursor.fetchone()
+            if admin and admin['password'] == password:
+                session['role'] = 'admin'
+                session['role_id'] = admin['id']
+                session['name'] = 'Super Admin'
+                return jsonify({'success': True, 'redirect': '/admin'})
+            else:
+                return jsonify({'success': False, 'error': 'Invalid Admin username or password.'})
+                
         elif role == 'vendor':
-            # Normalize common vendor aliases to seeded shops
+            # Normalize common aliases to seeded shop usernames for convenience
             norm_id = identifier.lower().strip()
             if norm_id in ['kirana', 'grocery', 'general', 'apna', 'apna bazaar', 'apnabazaar', '1']:
-                identifier = 'KIRANA'
+                identifier = 'kirana'
             elif norm_id in ['cakes', 'cake', 'bakery', 'baker', 'bakers', '2']:
-                identifier = 'CAKES'
+                identifier = 'cakes'
             elif norm_id in ['veggies', 'vegetables', 'fresh', 'green', '3']:
-                identifier = 'VEGGIES'
+                identifier = 'veggies'
             elif norm_id in ['electronics', 'electro', 'electroworld', '4']:
-                identifier = 'ELECTRONICS'
+                identifier = 'electronics'
 
-            # Check if vendor identifier exists
-            shop = None
-            if identifier.isdigit():
-                cursor.execute("SELECT * FROM shops WHERE id = ?", (int(identifier),))
-                shop = cursor.fetchone()
-            else:
-                cursor.execute("SELECT * FROM shops WHERE shop_name LIKE ? OR category LIKE ?", (f"%{identifier}%", f"%{identifier}%"))
-                shop = cursor.fetchone()
+            # Strict Vendor login checking username and password
+            cursor.execute("SELECT * FROM shops WHERE username = ? OR category = ?", (identifier, identifier.upper()))
+            shop = cursor.fetchone()
                 
-            if not shop:
-                # If shop doesn't exist, dynamically create it to let anyone log in!
-                category = "SHOP_" + identifier.upper().replace(" ", "_")[:10]
-                shop_name = identifier if "shop" in identifier.lower() or "bazaar" in identifier.lower() else f"{identifier} Store"
-                try:
-                    cursor.execute("INSERT INTO shops (shop_name, category, commission_pct) VALUES (?, ?, ?)", (shop_name, category, 5.0))
-                    db.commit()
-                    cursor.execute("SELECT * FROM shops WHERE id = ?", (cursor.lastrowid,))
-                    shop = cursor.fetchone()
-                    
-                    # Seed default products
-                    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop['id'], 'Standard Product A', 100.0))
-                    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop['id'], 'Standard Product B', 200.0))
-                    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop['id'], 'Standard Product C', 350.0))
-                    db.commit()
-                except Exception as e:
-                    # Check if category exists
-                    cursor.execute("SELECT * FROM shops WHERE category = ?", (category,))
-                    shop = cursor.fetchone()
-                    if not shop:
-                        return jsonify({'success': False, 'error': f'Failed to create vendor: {str(e)}'})
-            
-            session['role'] = 'vendor'
-            session['role_id'] = shop['id']
-            session['name'] = shop['shop_name']
-            return jsonify({'success': True, 'redirect': '/vendor'})
-            
+            if shop and shop['password'] == password:
+                session['role'] = 'vendor'
+                session['role_id'] = shop['id']
+                session['name'] = shop['shop_name']
+                return jsonify({'success': True, 'redirect': '/vendor'})
+            else:
+                return jsonify({'success': False, 'error': 'Invalid Vendor username or password.'})
+                
         elif role == 'delivery':
-            # Normalize common delivery boy aliases to seeded riders
+            # Normalize common aliases to seeded rider usernames for convenience
             norm_id = identifier.lower().strip()
             if norm_id in ['rahul', 'rahul rider', 'rider1', '1']:
-                identifier = 'Rahul Rider'
+                identifier = 'rahul'
             elif norm_id in ['amit', 'amit express', 'rider2', '2']:
-                identifier = 'Amit Express'
+                identifier = 'amit'
             elif norm_id in ['vicky', 'vicky speedster', 'rider3', '3']:
-                identifier = 'Vicky Speedster'
+                identifier = 'vicky'
 
-            rider = None
-            if identifier.isdigit():
-                cursor.execute("SELECT * FROM delivery_partners WHERE id = ?", (int(identifier),))
-                rider = cursor.fetchone()
-            else:
-                cursor.execute("SELECT * FROM delivery_partners WHERE name LIKE ?", (f"%{identifier}%",))
-                rider = cursor.fetchone()
+            # Strict Rider login checking username and password
+            cursor.execute("SELECT * FROM delivery_partners WHERE username = ? OR phone = ? OR name = ?", (identifier, identifier, identifier))
+            rider = cursor.fetchone()
                 
-            if not rider:
-                rider_name = identifier if "rider" in identifier.lower() or "delivery" in identifier.lower() else f"{identifier} Rider"
-                import random
-                mock_phone = f"9000{random.randint(100000, 999999)}"
-                try:
-                    cursor.execute("INSERT INTO delivery_partners (name, phone, active_orders, availability_status) VALUES (?, ?, 0, 'online')", (rider_name, mock_phone))
-                    db.commit()
-                    cursor.execute("SELECT * FROM delivery_partners WHERE id = ?", (cursor.lastrowid,))
-                    rider = cursor.fetchone()
-                except Exception as e:
-                    return jsonify({'success': False, 'error': f'Failed to create rider: {str(e)}'})
-                    
-            session['role'] = 'delivery'
-            session['role_id'] = rider['id']
-            session['name'] = rider['name']
-            return jsonify({'success': True, 'redirect': '/delivery'})
-            
+            if rider and rider['password'] == password:
+                session['role'] = 'delivery'
+                session['role_id'] = rider['id']
+                session['name'] = rider['name']
+                return jsonify({'success': True, 'redirect': '/delivery'})
+            else:
+                return jsonify({'success': False, 'error': 'Invalid Delivery Boy username or password.'})
+                
         return jsonify({'success': False, 'error': 'Invalid role.'})
         
     return render_template('staff_login.html')
@@ -805,6 +774,196 @@ def admin_modify_product(prod_id):
         ''', (name, float(price), int(is_available), prod_id))
         db.commit()
         return jsonify({'message': 'Product updated successfully.'})
+
+# --- Staff & Partners Management APIs ---
+@app.route('/api/admin/staff', methods=['GET'])
+def admin_get_staff():
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute("SELECT id, shop_name, category, commission_pct, username, password FROM shops")
+    shops = [dict(r) for r in cursor.fetchall()]
+    
+    cursor.execute("SELECT id, name, phone, availability_status, username, password FROM delivery_partners")
+    riders = [dict(r) for r in cursor.fetchall()]
+    
+    cursor.execute("SELECT id, username, password FROM admins")
+    admins = [dict(r) for r in cursor.fetchall()]
+    
+    return jsonify({
+        'shops': shops,
+        'riders': riders,
+        'admins': admins
+    })
+
+@app.route('/api/admin/staff/shop', methods=['POST'])
+def admin_create_shop():
+    data = request.json
+    shop_name = data.get('shop_name', '').strip()
+    category = data.get('category', '').strip().upper()
+    commission_pct = float(data.get('commission_pct', 5.0))
+    username = data.get('username', '').strip().lower()
+    password = data.get('password', '').strip()
+    
+    if not shop_name or not category or not username or not password:
+        return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO shops (shop_name, category, commission_pct, username, password)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (shop_name, category, commission_pct, username, password))
+        db.commit()
+        
+        # Seed default products for this new shop
+        shop_id = cursor.lastrowid
+        cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop_id, 'Standard Product A', 100.0))
+        cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop_id, 'Standard Product B', 200.0))
+        cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop_id, 'Standard Product C', 300.0))
+        db.commit()
+        
+        return jsonify({'success': True, 'message': 'Vendor created successfully.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/admin/staff/shop/<int:shop_id>', methods=['PUT', 'DELETE'])
+def admin_modify_shop(shop_id):
+    db = get_db()
+    cursor = db.cursor()
+    if request.method == 'DELETE':
+        try:
+            cursor.execute("DELETE FROM shops WHERE id = ?", (shop_id,))
+            db.commit()
+            return jsonify({'success': True, 'message': 'Vendor deleted successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+            
+    elif request.method == 'PUT':
+        data = request.json
+        shop_name = data.get('shop_name', '').strip()
+        category = data.get('category', '').strip().upper()
+        commission_pct = float(data.get('commission_pct', 5.0))
+        username = data.get('username', '').strip().lower()
+        password = data.get('password', '').strip()
+        
+        if not shop_name or not category or not username or not password:
+            return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+            
+        try:
+            cursor.execute('''
+                UPDATE shops 
+                SET shop_name = ?, category = ?, commission_pct = ?, username = ?, password = ?
+                WHERE id = ?
+            ''', (shop_name, category, commission_pct, username, password, shop_id))
+            db.commit()
+            return jsonify({'success': True, 'message': 'Vendor updated successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/admin/staff/delivery', methods=['POST'])
+def admin_create_delivery():
+    data = request.json
+    name = data.get('name', '').strip()
+    phone = data.get('phone', '').strip()
+    username = data.get('username', '').strip().lower()
+    password = data.get('password', '').strip()
+    
+    if not name or not phone or not username or not password:
+        return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO delivery_partners (name, phone, availability_status, username, password)
+            VALUES (?, ?, 'online', ?, ?)
+        ''', (name, phone, username, password))
+        db.commit()
+        return jsonify({'success': True, 'message': 'Delivery partner created successfully.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/admin/staff/delivery/<int:partner_id>', methods=['PUT', 'DELETE'])
+def admin_modify_delivery(partner_id):
+    db = get_db()
+    cursor = db.cursor()
+    if request.method == 'DELETE':
+        try:
+            cursor.execute("DELETE FROM delivery_partners WHERE id = ?", (partner_id,))
+            db.commit()
+            return jsonify({'success': True, 'message': 'Delivery partner deleted successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+            
+    elif request.method == 'PUT':
+        data = request.json
+        name = data.get('name', '').strip()
+        phone = data.get('phone', '').strip()
+        username = data.get('username', '').strip().lower()
+        password = data.get('password', '').strip()
+        
+        if not name or not phone or not username or not password:
+            return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+            
+        try:
+            cursor.execute('''
+                UPDATE delivery_partners
+                SET name = ?, phone = ?, username = ?, password = ?
+                WHERE id = ?
+            ''', (name, phone, username, password, partner_id))
+            db.commit()
+            return jsonify({'success': True, 'message': 'Delivery partner updated successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/admin/staff/admin', methods=['POST'])
+def admin_create_admin():
+    data = request.json
+    username = data.get('username', '').strip().lower()
+    password = data.get('password', '').strip()
+    
+    if not username or not password:
+        return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute('INSERT INTO admins (username, password) VALUES (?, ?)', (username, password))
+        db.commit()
+        return jsonify({'success': True, 'message': 'Admin created successfully.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/admin/staff/admin/<int:admin_id>', methods=['PUT', 'DELETE'])
+def admin_modify_admin(admin_id):
+    db = get_db()
+    cursor = db.cursor()
+    if request.method == 'DELETE':
+        try:
+            if admin_id == 1:
+                return jsonify({'success': False, 'error': 'Cannot delete original Super Admin.'}), 400
+            cursor.execute("DELETE FROM admins WHERE id = ?", (admin_id,))
+            db.commit()
+            return jsonify({'success': True, 'message': 'Admin deleted successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+            
+    elif request.method == 'PUT':
+        data = request.json
+        username = data.get('username', '').strip().lower()
+        password = data.get('password', '').strip()
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+            
+        try:
+            cursor.execute('UPDATE admins SET username = ?, password = ? WHERE id = ?', (username, password, admin_id))
+            db.commit()
+            return jsonify({'success': True, 'message': 'Admin updated successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
 
 # --- Rider Active Job & Status APIs ---
 @app.route('/api/delivery/rider/<int:rider_id>/active', methods=['GET'])

@@ -35,9 +35,21 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         shop_name TEXT NOT NULL,
         category TEXT UNIQUE NOT NULL,
-        commission_pct REAL DEFAULT 5.0
+        commission_pct REAL DEFAULT 5.0,
+        username TEXT,
+        password TEXT NOT NULL DEFAULT '123456'
     )
     ''')
+    
+    try:
+        cursor.execute("SELECT password FROM shops LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE shops ADD COLUMN username TEXT")
+            cursor.execute("ALTER TABLE shops ADD COLUMN password TEXT NOT NULL DEFAULT '123456'")
+            conn.commit()
+        except Exception:
+            pass
     
     # 3. Products Table
     cursor.execute('''
@@ -59,9 +71,21 @@ def init_db():
         phone TEXT UNIQUE NOT NULL,
         active_orders INTEGER DEFAULT 0,
         availability_status TEXT DEFAULT 'online',
-        cooldown_until TIMESTAMP NULL
+        cooldown_until TIMESTAMP NULL,
+        username TEXT,
+        password TEXT NOT NULL DEFAULT '123456'
     )
     ''')
+    
+    try:
+        cursor.execute("SELECT password FROM delivery_partners LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE delivery_partners ADD COLUMN username TEXT")
+            cursor.execute("ALTER TABLE delivery_partners ADD COLUMN password TEXT NOT NULL DEFAULT '123456'")
+            conn.commit()
+        except Exception:
+            pass
     
     # 5. Orders Table (State Machine Master)
     cursor.execute('''
@@ -101,6 +125,15 @@ def init_db():
     )
     ''')
     
+    # 7. Admins Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )
+    ''')
+    
     conn.commit()
     conn.close()
     print("Database tables created successfully!")
@@ -123,16 +156,22 @@ def seed_db():
             
     # Seed Shops
     shops_data = [
-        ('Apna Bazaar (Kirana & General)', 'KIRANA', 5.0),
-        ('The Bakers Table (Premium Cakes)', 'CAKES', 8.0),
-        ('Fresh & Green Vegetables', 'VEGGIES', 4.0),
-        ('ElectroWorld Solutions', 'ELECTRONICS', 10.0)
+        ('Apna Bazaar (Kirana & General)', 'KIRANA', 5.0, 'kirana', '123456'),
+        ('The Bakers Table (Premium Cakes)', 'CAKES', 8.0, 'cakes', '123456'),
+        ('Fresh & Green Vegetables', 'VEGGIES', 4.0, 'veggies', '123456'),
+        ('ElectroWorld Solutions', 'ELECTRONICS', 10.0, 'electronics', '123456')
     ]
     for shop in shops_data:
         try:
-            cursor.execute('INSERT INTO shops (shop_name, category, commission_pct) VALUES (?, ?, ?)', shop)
+            cursor.execute('INSERT INTO shops (shop_name, category, commission_pct, username, password) VALUES (?, ?, ?, ?, ?)', shop)
         except sqlite3.IntegrityError:
             pass # Already exists
+            
+    # Update existing shops to populate username & password if they are empty
+    cursor.execute("UPDATE shops SET username = 'kirana', password = '123456' WHERE category = 'KIRANA' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'cakes', password = '123456' WHERE category = 'CAKES' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'veggies', password = '123456' WHERE category = 'VEGGIES' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'electronics', password = '123456' WHERE category = 'ELECTRONICS' AND username IS NULL")
             
     conn.commit()
     
@@ -174,16 +213,27 @@ def seed_db():
             
     # Seed Delivery Partners
     partners_data = [
-        ('Rahul Rider', '9000000001', 0, 'online'),
-        ('Amit Express', '9000000002', 0, 'online'),
-        ('Vicky Speedster', '9000000003', 0, 'offline')
+        ('Rahul Rider', '9000000001', 0, 'online', 'rahul', '123456'),
+        ('Amit Express', '9000000002', 0, 'online', 'amit', '123456'),
+        ('Vicky Speedster', '9000000003', 0, 'offline', 'vicky', '123456')
     ]
     for partner in partners_data:
         try:
-            cursor.execute('INSERT INTO delivery_partners (name, phone, active_orders, availability_status) VALUES (?, ?, ?, ?)', partner)
+            cursor.execute('INSERT INTO delivery_partners (name, phone, active_orders, availability_status, username, password) VALUES (?, ?, ?, ?, ?, ?)', partner)
         except sqlite3.IntegrityError:
             pass
             
+    # Update existing partners to populate username & password if they are empty
+    cursor.execute("UPDATE delivery_partners SET username = 'rahul', password = '123456' WHERE phone = '9000000001' AND username IS NULL")
+    cursor.execute("UPDATE delivery_partners SET username = 'amit', password = '123456' WHERE phone = '9000000002' AND username IS NULL")
+    cursor.execute("UPDATE delivery_partners SET username = 'vicky', password = '123456' WHERE phone = '9000000003' AND username IS NULL")
+    
+    # Seed Admin accounts
+    try:
+        cursor.execute("INSERT INTO admins (username, password) VALUES (?, ?)", ('admin', 'admin123'))
+    except sqlite3.IntegrityError:
+        pass
+        
     conn.commit()
     conn.close()
     print("Database seeded successfully with exclusive shops, products, users, and riders!")

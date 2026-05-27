@@ -83,6 +83,75 @@
     </div>
 </div>
 
+<!-- STAFF & PARTNERS ACCESS CONTROL (CRUD) -->
+<div class="shop-section mt-md fade-in-up" style="margin-bottom: 32px;">
+    <!-- Staff Directory List -->
+    <div class="glass-card">
+        <div class="flex-between mb-sm" style="border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
+            <h3 style="font-weight:800; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;"><i data-lucide="shield-check" class="icon-inline" style="margin: 0;"></i> Staff & Partners</h3>
+            <div style="display: flex; gap: 6px; background: #e2e8f0; padding: 4px; border-radius: var(--radius-sm);">
+                <button onclick="switchStaffTab('vendor')" id="tab-staff-vendor" class="btn-signup-top" style="padding: 6px 12px; font-size: 0.8rem; background: var(--primary-accent); color: white; border: none; cursor: pointer; font-weight: 700; border-radius: 4px;">Vendors</button>
+                <button onclick="switchStaffTab('delivery')" id="tab-staff-delivery" class="btn-signup-top" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; font-weight: 700; border-radius: 4px;">Riders</button>
+                <button onclick="switchStaffTab('admin')" id="tab-staff-admin" class="btn-signup-top" style="padding: 6px 12px; font-size: 0.8rem; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; font-weight: 700; border-radius: 4px;">Admins</button>
+            </div>
+        </div>
+        
+        <div style="max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 8px;" id="staff-directory-list">
+            <!-- Loaded dynamically -->
+        </div>
+    </div>
+
+    <!-- Staff Access Form -->
+    <div class="glass-card" style="height: fit-content; background: #f8fafc;">
+        <h3 style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; font-weight: 800; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;" id="staff-form-action-title"><i data-lucide="user-plus" class="icon-inline" style="margin: 0;"></i> Add New Member</h3>
+        
+        <input type="hidden" id="edit-staff-id">
+        <input type="hidden" id="edit-staff-role" value="vendor">
+        
+        <div class="form-group" id="staff-form-role-group">
+            <label class="form-label">Account Role</label>
+            <select id="staff-form-role" class="form-input" onchange="handleStaffFormRoleChange()">
+                <option value="vendor">Vendor (Shop Owner)</option>
+                <option value="delivery">Delivery Boy (Rider)</option>
+                <option value="admin">Platform Admin</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="staff-group-name">
+            <label class="form-label" id="lbl-staff-name">Shop Name</label>
+            <input type="text" id="staff-form-name" class="form-input" placeholder="e.g. Hamar Kirana Store">
+        </div>
+        
+        <div class="form-group" id="staff-group-extra">
+            <label class="form-label" id="lbl-staff-extra">Category Name (Unique)</label>
+            <input type="text" id="staff-form-extra" class="form-input" placeholder="e.g. KIRANA">
+        </div>
+
+        <div class="form-group" id="staff-group-commission">
+            <label class="form-label">Commission Percentage (%)</label>
+            <input type="number" id="staff-form-commission" class="form-input" placeholder="e.g. 5.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Login Username</label>
+            <input type="text" id="staff-form-username" class="form-input" placeholder="e.g. kirana">
+        </div>
+
+        <div class="form-group" style="position: relative;">
+            <label class="form-label">Password</label>
+            <input type="password" id="staff-form-password" class="form-input" placeholder="Enter secure password" value="123456">
+            <span class="password-toggle-eye" onclick="toggleStaffFormPasswordVisibility()" style="top: 42px;">
+                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+            </span>
+        </div>
+        
+        <div style="display:flex; gap:12px; margin-top: 32px;">
+            <button class="btn btn-primary" id="staff-form-save-btn" onclick="saveStaffMember()" style="flex: 2;">Save Access</button>
+            <button class="btn btn-secondary" id="staff-form-cancel-btn" onclick="resetStaffForm()" style="display: none; flex: 1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <!-- PRODUCT CONTROL CRUD SECTION (ADMIN-002) -->
 <div class="shop-section mt-md fade-in-up">
     <!-- Product Catalog List -->
@@ -173,10 +242,13 @@
 <script>
     let hoursChart = null;
     let categoryChart = null;
+    let currentStaffTab = 'vendor';
+    let staffDataCache = null;
 
     document.addEventListener("DOMContentLoaded", () => {
         loadAnalytics();
         loadCrudProducts();
+        loadStaffDirectory();
         
         setInterval(() => {
             loadAnalytics();
@@ -451,6 +523,285 @@
         document.getElementById("form-action-title").innerHTML = `<i data-lucide="plus" class="icon-inline" style="margin: 0; width: 16px; height: 16px; color: var(--primary-accent);"></i> Add New Product`;
         document.getElementById("form-cancel-btn").style.display = "none";
         refreshIcons();
+    }
+
+    // --- Staff Management Panel JS ---
+    function loadStaffDirectory() {
+        fetch('/api/admin/staff')
+            .then(res => res.json())
+            .then(data => {
+                staffDataCache = data;
+                renderStaffList();
+                resetStaffForm();
+            });
+    }
+
+    function renderStaffList() {
+        const listContainer = document.getElementById("staff-directory-list");
+        listContainer.innerHTML = "";
+        
+        if (!staffDataCache) return;
+        
+        let list = [];
+        if (currentStaffTab === 'vendor') {
+            list = staffDataCache.shops;
+        } else if (currentStaffTab === 'delivery') {
+            list = staffDataCache.riders;
+        } else {
+            list = staffDataCache.admins;
+        }
+        
+        if (list.length === 0) {
+            listContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding: 20px;">No members found in this category.</p>`;
+            return;
+        }
+        
+        list.forEach(member => {
+            const card = document.createElement("div");
+            card.style.padding = "16px";
+            card.style.background = "#ffffff";
+            card.style.border = "1px solid var(--border-color)";
+            card.style.borderRadius = "var(--radius-md)";
+            card.style.display = "flex";
+            card.style.justifyContent = "space-between";
+            card.style.alignItems = "center";
+            
+            let name = "";
+            let detailsHtml = "";
+            if (currentStaffTab === 'vendor') {
+                name = member.shop_name;
+                detailsHtml = `
+                    <span class="badge badge-normal" style="margin-bottom:4px;">${member.category}</span>
+                    <div style="font-size: 0.825rem; color: var(--text-secondary); margin-top:2px;">
+                        Commission: <strong>${member.commission_pct}%</strong> | Username: <code>${member.username || 'N/A'}</code>
+                    </div>
+                `;
+            } else if (currentStaffTab === 'delivery') {
+                name = member.name;
+                detailsHtml = `
+                    <span class="badge badge-status-ready" style="margin-bottom:4px;">${member.availability_status}</span>
+                    <div style="font-size: 0.825rem; color: var(--text-secondary); margin-top:2px;">
+                        Phone: <strong>${member.phone}</strong> | Username: <code>${member.username || 'N/A'}</code>
+                    </div>
+                `;
+            } else {
+                name = member.username;
+                detailsHtml = `
+                    <span class="badge" style="background:#475569; color:white; margin-bottom:4px;">Admin</span>
+                    <div style="font-size: 0.825rem; color: var(--text-secondary); margin-top:2px;">
+                        System superuser control
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = `
+                <div>
+                    <strong style="font-size: 1.05rem; display: block; margin-bottom: 4px;">${name}</strong>
+                    ${detailsHtml}
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top:4px;">
+                        Password: <span>${member.password}</span>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction: column; gap:8px;">
+                    <button class="btn btn-secondary" onclick="editStaffMember(${member.id}, '${currentStaffTab}')" style="width: 80px; padding:6px; font-size:0.85rem;">Edit</button>
+                    <button class="btn btn-secondary" onclick="deleteStaffMember(${member.id}, '${currentStaffTab}')" style="width: 80px; padding:6px; font-size:0.85rem; color: var(--ruby-danger); border-color: rgba(239, 68, 68, 0.3);">Delete</button>
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+        refreshIcons();
+    }
+
+    function switchStaffTab(tab) {
+        currentStaffTab = tab;
+        
+        ['vendor', 'delivery', 'admin'].forEach(t => {
+            const btn = document.getElementById(`tab-staff-${t}`);
+            if (t === tab) {
+                btn.style.background = 'var(--primary-accent)';
+                btn.style.color = 'white';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text-secondary)';
+            }
+        });
+        
+        document.getElementById("staff-form-role").value = tab;
+        handleStaffFormRoleChange();
+        
+        renderStaffList();
+    }
+
+    function handleStaffFormRoleChange() {
+        const role = document.getElementById("staff-form-role").value;
+        
+        const groupName = document.getElementById("staff-group-name");
+        const groupExtra = document.getElementById("staff-group-extra");
+        const groupComm = document.getElementById("staff-group-commission");
+        
+        const lblName = document.getElementById("lbl-staff-name");
+        const lblExtra = document.getElementById("lbl-staff-extra");
+        
+        const txtName = document.getElementById("staff-form-name");
+        const txtExtra = document.getElementById("staff-form-extra");
+        
+        if (role === 'vendor') {
+            groupName.style.display = 'block';
+            groupExtra.style.display = 'block';
+            groupComm.style.display = 'block';
+            lblName.innerText = "Shop Name";
+            lblExtra.innerText = "Category Name (Unique)";
+            txtName.placeholder = "e.g. Apna Bazaar";
+            txtExtra.placeholder = "e.g. KIRANA";
+        } else if (role === 'delivery') {
+            groupName.style.display = 'block';
+            groupExtra.style.display = 'block';
+            groupComm.style.display = 'none';
+            lblName.innerText = "Rider Name";
+            lblExtra.innerText = "Phone Number (Unique)";
+            txtName.placeholder = "e.g. Rahul Rider";
+            txtExtra.placeholder = "e.g. 9876543210";
+        } else {
+            groupName.style.display = 'none';
+            groupExtra.style.display = 'none';
+            groupComm.style.display = 'none';
+        }
+    }
+
+    function saveStaffMember() {
+        const id = document.getElementById("edit-staff-id").value;
+        const role = document.getElementById("staff-form-role").value;
+        const name = document.getElementById("staff-form-name").value.trim();
+        const extra = document.getElementById("staff-form-extra").value.trim();
+        const commission = document.getElementById("staff-form-commission").value;
+        const username = document.getElementById("staff-form-username").value.trim();
+        const password = document.getElementById("staff-form-password").value.trim();
+        
+        if (!username || !password) {
+            alert("Username and Password are required.");
+            return;
+        }
+        
+        if (role === 'vendor' && (!name || !extra)) {
+            alert("Shop Name and Category are required.");
+            return;
+        }
+        
+        if (role === 'delivery' && (!name || !extra)) {
+            alert("Rider Name and Phone are required.");
+            return;
+        }
+        
+        let payload = { username: username, password: password };
+        let endpoint = `/api/admin/staff/${role}`;
+        if (id) endpoint += `/${id}`;
+        
+        if (role === 'vendor') {
+            payload.shop_name = name;
+            payload.category = extra;
+            payload.commission_pct = parseFloat(commission);
+        } else if (role === 'delivery') {
+            payload.name = name;
+            payload.phone = extra;
+        }
+        
+        fetch(endpoint, {
+            method: id ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                resetStaffForm();
+                loadStaffDirectory();
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(err => {
+            alert("API Request Failed.");
+        });
+    }
+
+    function editStaffMember(id, role) {
+        let member = null;
+        if (role === 'vendor') {
+            member = staffDataCache.shops.find(x => x.id === id);
+        } else if (role === 'delivery') {
+            member = staffDataCache.riders.find(x => x.id === id);
+        } else {
+            member = staffDataCache.admins.find(x => x.id === id);
+        }
+        
+        if (!member) return;
+        
+        document.getElementById("edit-staff-id").value = id;
+        document.getElementById("staff-form-role").value = role;
+        document.getElementById("staff-form-role-group").style.display = "none";
+        
+        handleStaffFormRoleChange();
+        
+        document.getElementById("staff-form-username").value = member.username || '';
+        document.getElementById("staff-form-password").value = member.password;
+        
+        if (role === 'vendor') {
+            document.getElementById("staff-form-name").value = member.shop_name;
+            document.getElementById("staff-form-extra").value = member.category;
+            document.getElementById("staff-form-commission").value = member.commission_pct;
+        } else if (role === 'delivery') {
+            document.getElementById("staff-form-name").value = member.name;
+            document.getElementById("staff-form-extra").value = member.phone;
+        }
+        
+        document.getElementById("staff-form-action-title").innerHTML = `<i data-lucide="edit-3" class="icon-inline" style="margin: 0; width: 16px; height: 16px; color: var(--primary-accent);"></i> Edit Staff Access`;
+        document.getElementById("staff-form-cancel-btn").style.display = "block";
+        
+        document.getElementById("staff-form-action-title").scrollIntoView({ behavior: 'smooth' });
+        refreshIcons();
+    }
+
+    function deleteStaffMember(id, role) {
+        if (!confirm(`Are you sure you want to remove this ${role} account?`)) return;
+        
+        fetch(`/api/admin/staff/${role}/${id}`, { method: "DELETE" })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    loadStaffDirectory();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            });
+    }
+
+    function resetStaffForm() {
+        document.getElementById("edit-staff-id").value = "";
+        document.getElementById("staff-form-role-group").style.display = "block";
+        
+        document.getElementById("staff-form-name").value = "";
+        document.getElementById("staff-form-extra").value = "";
+        document.getElementById("staff-form-commission").value = "5.0";
+        document.getElementById("staff-form-username").value = "";
+        document.getElementById("staff-form-password").value = "123456";
+        
+        document.getElementById("staff-form-action-title").innerHTML = `<i data-lucide="user-plus" class="icon-inline" style="margin: 0; width: 16px; height: 16px; color: var(--primary-accent);"></i> Add New Member`;
+        document.getElementById("staff-form-cancel-btn").style.display = "none";
+        
+        document.getElementById("staff-form-role").value = currentStaffTab;
+        handleStaffFormRoleChange();
+        refreshIcons();
+    }
+
+    function toggleStaffFormPasswordVisibility() {
+        const pwdInput = document.getElementById("staff-form-password");
+        if (pwdInput.type === "password") {
+            pwdInput.type = "text";
+        } else {
+            pwdInput.type = "password";
+        }
     }
 </script>
 {% endblock %}
