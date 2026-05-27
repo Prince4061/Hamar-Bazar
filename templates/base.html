@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mor Bazaar - Hyperlocal Delivery</title>
+    <title>Hamar Bazaar - Hyperlocal Delivery</title>
     <!-- Stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <!-- Lucide Icons -->
@@ -15,8 +15,8 @@
     {% if session.get('role') %}
     <div class="simulator-header">
         <div class="brand-section">
-            <span class="brand-badge">MOR</span>
-            <span class="brand-title">Mor Bazaar</span>
+            <span class="brand-badge">HAMAR</span>
+            <span class="brand-title">Hamar Bazaar</span>
         </div>
         <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
             {% if session.get('role') == 'vendor' %}<i data-lucide="store" class="icon-inline"></i> Vendor Mode{% endif %}
