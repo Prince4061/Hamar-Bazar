@@ -2,16 +2,6 @@
 
 {% block content %}
 <div class="login-page-wrapper">
-    <!-- Top Nav Action -->
-    <div class="login-top-bar">
-        <a href="/staff-login" class="btn-top-switch">
-            <span class="desktop-text">Staff Login (Admin/Vendor/Rider)</span>
-            <span class="mobile-text">Staff Login</span>
-            <i data-lucide="arrow-right" class="icon-inline" style="margin-left: 4px; margin-right: 0;"></i>
-        </a>
-        <button class="btn-signup-top" onclick="alert('Signup is automatic! Just enter any phone number to login/signup.')">New User? Sign up</button>
-    </div>
-
     <!-- Main Grid Content -->
     <div class="login-grid">
         <!-- Left Side: Slogan, Features & Illustration -->
@@ -164,6 +154,12 @@
                 <div class="terms-footer">
                     By continuing, you agree to our<br>
                     <a href="#" onclick="alert('Terms and Conditions simulated.')">Terms & Conditions</a> and <a href="#" onclick="alert('Privacy Policy simulated.')">Privacy Policy</a>
+                </div>
+
+                <div class="staff-switch-footer">
+                    <a href="/staff-login" class="staff-switch-link">
+                        Are you a Staff Member? <strong>Staff Login</strong> <i data-lucide="arrow-right" class="icon-inline" style="width: 14px; height: 14px; margin-left: 4px; vertical-align: middle;"></i>
+                    </a>
                 </div>
             </div>
 

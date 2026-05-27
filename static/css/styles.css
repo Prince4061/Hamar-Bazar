@@ -228,6 +228,37 @@ body {
     display: none !important;
 }
 
+.staff-switch-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.staff-switch-link {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.staff-switch-link strong {
+    color: var(--primary-accent);
+    margin-left: 4px;
+}
+
+.staff-switch-link:hover {
+    color: var(--primary-accent);
+}
+
+.staff-switch-link:hover strong {
+    color: var(--primary-accent-hover);
+}
+
 .login-page-wrapper {
     min-height: 100vh;
     display: flex;

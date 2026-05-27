@@ -2,14 +2,6 @@
 
 {% block content %}
 <div class="login-page-wrapper staff-theme">
-    <!-- Top Nav Action -->
-    <div class="login-top-bar">
-        <a href="/login" class="btn-top-switch">
-            <span class="desktop-text">← Customer Portal Login</span>
-            <span class="mobile-text">← Customer Login</span>
-        </a>
-    </div>
-
     <!-- Main Grid Content -->
     <div class="login-grid">
         <!-- Left Side: Role details and support -->
@@ -138,6 +130,12 @@
 
                     <button type="submit" class="btn-staff-login">Login</button>
                 </form>
+
+                <div class="staff-switch-footer">
+                    <a href="/login" class="staff-switch-link">
+                        <i data-lucide="arrow-left" class="icon-inline" style="margin-right: 4px; vertical-align: middle;"></i> Back to <strong>Customer Login</strong>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
