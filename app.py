@@ -93,25 +93,29 @@ def login():
         elif phone.startswith('91') and len(phone) > 10:
             phone = phone[2:]
             
-        if not phone or not username:
-            return jsonify({'success': False, 'error': 'Mobile number and username are required.'})
+        if not phone or not username or not password:
+            return jsonify({'success': False, 'error': 'Mobile number, username and password are required.'})
             
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM users WHERE phone LIKE ? OR name LIKE ?", (f"%{phone}%", f"%{username}%"))
+        cursor.execute("SELECT * FROM users WHERE phone = ?", (phone,))
         user = cursor.fetchone()
         
         if user:
-            session['role'] = 'customer'
-            session['role_id'] = user['id']
-            session['name'] = user['name']
-            return jsonify({'success': True, 'redirect': '/customer'})
+            # User exists, validate password
+            if user['password'] == password:
+                session['role'] = 'customer'
+                session['role_id'] = user['id']
+                session['name'] = user['name']
+                return jsonify({'success': True, 'redirect': '/customer'})
+            else:
+                return jsonify({'success': False, 'error': 'Incorrect password for this mobile number.'})
         else:
             # Dynamically register/create a new customer if phone number doesn't exist
-            # This implements "anyone can login by their credentials"
             new_address = "Sector 4, Local Area"
             try:
-                cursor.execute("INSERT INTO users (name, phone, address) VALUES (?, ?, ?)", (username, phone, new_address))
+                cursor.execute("INSERT INTO users (name, phone, address, password) VALUES (?, ?, ?, ?)", 
+                               (username, phone, new_address, password))
                 db.commit()
                 # Get the newly created user
                 cursor.execute("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,))

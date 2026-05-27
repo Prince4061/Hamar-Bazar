@@ -18,9 +18,16 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         phone TEXT UNIQUE NOT NULL,
-        address TEXT NOT NULL
+        address TEXT NOT NULL,
+        password TEXT NOT NULL DEFAULT '123456'
     )
     ''')
+    
+    try:
+        cursor.execute("SELECT password FROM users LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE users ADD COLUMN password TEXT NOT NULL DEFAULT '123456'")
+        conn.commit()
     
     # 2. Shops Table
     cursor.execute('''
@@ -104,13 +111,13 @@ def seed_db():
     
     # Seed Users
     users_data = [
-        ('Alice Sharma', '9876543210', 'Flat 101, Sunshine Apartments, Sector 4'),
-        ('Bob Verma', '8765432109', 'House 23, Green Valley Colony, Road 2'),
-        ('Charlie Gupta', '7654321098', 'Penthouse B, Skyline Heights, Main Road')
+        ('Alice Sharma', '9876543210', 'Flat 101, Sunshine Apartments, Sector 4', '123456'),
+        ('Bob Verma', '8765432109', 'House 23, Green Valley Colony, Road 2', '123456'),
+        ('Charlie Gupta', '7654321098', 'Penthouse B, Skyline Heights, Main Road', '123456')
     ]
     for user in users_data:
         try:
-            cursor.execute('INSERT INTO users (name, phone, address) VALUES (?, ?, ?)', user)
+            cursor.execute('INSERT INTO users (name, phone, address, password) VALUES (?, ?, ?, ?)', user)
         except sqlite3.IntegrityError:
             pass # Already exists
             
