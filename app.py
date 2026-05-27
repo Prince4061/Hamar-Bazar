@@ -436,6 +436,20 @@ def get_customer_expenses(customer_id):
         'total_spent_overall': round(total_all, 2)
     })
 
+@app.route('/api/customer/<int:customer_id>/orders', methods=['GET'])
+def get_customer_orders(customer_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        SELECT o.*, s.shop_name, s.category
+        FROM orders o
+        JOIN shops s ON o.shop_id = s.id
+        WHERE o.customer_id = ?
+        ORDER BY o.id DESC
+    ''', (customer_id,))
+    orders = [dict(row) for row in cursor.fetchall()]
+    return jsonify(orders)
+
 # --- Vendor APIs ---
 
 @app.route('/api/vendor/orders/<int:shop_id>', methods=['GET'])
