@@ -59,9 +59,19 @@ def init_db():
         name TEXT NOT NULL,
         price REAL NOT NULL,
         is_available BOOLEAN DEFAULT 1,
+        image_url TEXT,
         FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
     )
     ''')
+    
+    try:
+        cursor.execute("SELECT image_url FROM products LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE products ADD COLUMN image_url TEXT")
+            conn.commit()
+        except Exception:
+            pass
 
     # 4. Delivery Partners Table
     cursor.execute('''
@@ -182,34 +192,36 @@ def seed_db():
     # Seed Products
     products_data = [
         # Kirana
-        (shop_ids['KIRANA'], 'Milk 1L Packet', 50.0),
-        (shop_ids['KIRANA'], 'Bread Brown Slice', 40.0),
-        (shop_ids['KIRANA'], 'Amul Butter 100g', 60.0),
-        (shop_ids['KIRANA'], 'Sugar 1kg Pack', 45.0),
-        (shop_ids['KIRANA'], 'Tata Tea Premium 250g', 95.0),
+        (shop_ids['KIRANA'], 'Milk 1L Packet', 50.0, 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['KIRANA'], 'Bread Brown Slice', 40.0, 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['KIRANA'], 'Amul Butter 100g', 60.0, 'https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['KIRANA'], 'Sugar 1kg Pack', 45.0, 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['KIRANA'], 'Tata Tea Premium 250g', 95.0, 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&auto=format&fit=crop&q=60'),
         # Cakes
-        (shop_ids['CAKES'], 'Chocolate Truffle Cake 500g', 450.0),
-        (shop_ids['CAKES'], 'Red Velvet Cake 500g', 500.0),
-        (shop_ids['CAKES'], 'Sparkling Candles Pack', 35.0),
-        (shop_ids['CAKES'], 'Birthday Cap Premium', 25.0),
+        (shop_ids['CAKES'], 'Chocolate Truffle Cake 500g', 450.0, 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['CAKES'], 'Red Velvet Cake 500g', 500.0, 'https://images.unsplash.com/photo-1616541823729-00fe0aacd32c?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['CAKES'], 'Sparkling Candles Pack', 35.0, 'https://images.unsplash.com/photo-1541417904950-b855846fe074?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['CAKES'], 'Birthday Cap Premium', 25.0, 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=500&auto=format&fit=crop&q=60'),
         # Veggies
-        (shop_ids['VEGGIES'], 'Potato 1kg', 30.0),
-        (shop_ids['VEGGIES'], 'Tomato 1kg', 40.0),
-        (shop_ids['VEGGIES'], 'Onion 1kg', 35.0),
-        (shop_ids['VEGGIES'], 'Fresh Coriander Bundle', 12.0),
-        (shop_ids['VEGGIES'], 'Fresh Lemon 250g', 25.0),
+        (shop_ids['VEGGIES'], 'Potato 1kg', 30.0, 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['VEGGIES'], 'Tomato 1kg', 40.0, 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['VEGGIES'], 'Onion 1kg', 35.0, 'https://images.unsplash.com/photo-1508747703725-719ae257c84a?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['VEGGIES'], 'Fresh Coriander Bundle', 12.0, 'https://images.unsplash.com/photo-1608797178974-15b35a61d121?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['VEGGIES'], 'Fresh Lemon 250g', 25.0, 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=500&auto=format&fit=crop&q=60'),
         # Electronics
-        (shop_ids['ELECTRONICS'], 'Fast USB-C Cable 1.5m', 150.0),
-        (shop_ids['ELECTRONICS'], 'Wired Earphones with Mic', 250.0),
-        (shop_ids['ELECTRONICS'], 'AA Duracell Battery 4pc', 120.0),
-        (shop_ids['ELECTRONICS'], 'Smart WiFi Plug 16A', 599.0)
+        (shop_ids['ELECTRONICS'], 'Fast USB-C Cable 1.5m', 150.0, 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['ELECTRONICS'], 'Wired Earphones with Mic', 250.0, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['ELECTRONICS'], 'AA Duracell Battery 4pc', 120.0, 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['ELECTRONICS'], 'Smart WiFi Plug 16A', 599.0, 'https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60')
     ]
     
     for product in products_data:
         # Check if already seeded to avoid duplicates
         cursor.execute('SELECT id FROM products WHERE shop_id = ? AND name = ?', (product[0], product[1]))
         if not cursor.fetchone():
-            cursor.execute('INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)', product)
+            cursor.execute('INSERT INTO products (shop_id, name, price, image_url) VALUES (?, ?, ?, ?)', product)
+        else:
+            cursor.execute('UPDATE products SET image_url = ? WHERE shop_id = ? AND name = ? AND image_url IS NULL', (product[3], product[0], product[1]))
             
     # Seed Delivery Partners
     partners_data = [

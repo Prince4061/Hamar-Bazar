@@ -187,6 +187,11 @@
             <input type="number" id="form-prod-price" class="form-input" placeholder="e.g. 45" step="0.01">
         </div>
 
+        <div class="form-group">
+            <label class="form-label">Product Image URL</label>
+            <input type="text" id="form-prod-image" class="form-input" placeholder="e.g. https://images.unsplash.com/...">
+        </div>
+
         <div class="form-group" id="form-shop-select-group">
             <label class="form-label">Shop Category</label>
             <select id="form-prod-shop" class="form-input">
@@ -427,18 +432,25 @@
                     row.style.justifyContent = "space-between";
                     row.style.alignItems = "center";
                     
+                    let imgHtml = p.image_url ? 
+                        `<img src="${p.image_url}" alt="${p.name}" style="width: 48px; height: 48px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">` :
+                        `<div style="background: #f8fafc; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); color: var(--text-muted); border: 1px solid var(--border-color);"><i data-lucide="package" style="width: 20px; height: 20px; stroke-width: 1.5;"></i></div>`;
+
                     row.innerHTML = `
-                        <div>
-                            <strong style="font-size: 1.05rem; display: block; margin-bottom: 4px;">${p.name}</strong> 
-                            <div style="display: flex; gap: 12px; align-items: center;">
-                                <span class="text-accent" style="font-weight: 800;">₹${p.price.toFixed(2)}</span>
-                                <span style="font-size:0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" class="${p.is_available ? 'text-emerald' : 'text-danger'}">
-                                    ${p.is_available ? '<i data-lucide="check-circle" class="icon-inline" style="width: 12px; height: 12px; color: var(--emerald-green); margin: 0;"></i> In Stock' : '<i data-lucide="x-circle" class="icon-inline" style="width: 12px; height: 12px; color: var(--ruby-danger); margin: 0;"></i> Out of Stock'}
-                                </span>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            ${imgHtml}
+                            <div>
+                                <strong style="font-size: 1.05rem; display: block; margin-bottom: 4px;">${p.name}</strong> 
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <span class="text-accent" style="font-weight: 800;">₹${p.price.toFixed(2)}</span>
+                                    <span style="font-size:0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" class="${p.is_available ? 'text-emerald' : 'text-danger'}">
+                                        ${p.is_available ? '<i data-lucide="check-circle" class="icon-inline" style="width: 12px; height: 12px; color: var(--emerald-green); margin: 0;"></i> In Stock' : '<i data-lucide="x-circle" class="icon-inline" style="width: 12px; height: 12px; color: var(--ruby-danger); margin: 0;"></i> Out of Stock'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <div style="display:flex; flex-direction: column; gap:8px;">
-                            <button class="btn btn-secondary" onclick="editProduct(${p.id}, '${p.name}', ${p.price}, ${p.is_available})" style="width: 80px; padding:6px; font-size:0.85rem;">Edit</button>
+                            <button class="btn btn-secondary" onclick="editProduct(${p.id}, '${p.name}', ${p.price}, ${p.is_available}, '${p.image_url || ''}')" style="width: 80px; padding:6px; font-size:0.85rem;">Edit</button>
                             <button class="btn btn-secondary" onclick="deleteProduct(${p.id})" style="width: 80px; padding:6px; font-size:0.85rem; color: var(--ruby-danger); border-color: rgba(239, 68, 68, 0.3);">Delete</button>
                         </div>
                     `;
@@ -453,18 +465,22 @@
         const name = document.getElementById("form-prod-name").value.trim();
         const price = document.getElementById("form-prod-price").value;
         const shopId = document.getElementById("form-prod-shop").value;
+        const imageUrl = document.getElementById("form-prod-image").value.trim();
         
         if (!name || !price) {
             alert("Please complete the product name and pricing details.");
             return;
         }
         
+        const payload = { name: name, price: price, image_url: imageUrl };
+        
         if (id) {
             const isAvail = document.getElementById("form-prod-avail").value;
+            payload.is_available = isAvail;
             fetch(`/api/admin/products/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: name, price: price, is_available: isAvail })
+                body: JSON.stringify(payload)
             })
             .then(res => res.json())
             .then(data => {
@@ -472,10 +488,11 @@
                 loadCrudProducts();
             });
         } else {
+            payload.shop_id = shopId;
             fetch(`/api/admin/products`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ shop_id: shopId, name: name, price: price })
+                body: JSON.stringify(payload)
             })
             .then(res => res.json())
             .then(data => {
@@ -485,10 +502,11 @@
         }
     }
 
-    function editProduct(id, name, price, isAvailable) {
+    function editProduct(id, name, price, isAvailable, imageUrl) {
         document.getElementById("edit-prod-id").value = id;
         document.getElementById("form-prod-name").value = name;
         document.getElementById("form-prod-price").value = price;
+        document.getElementById("form-prod-image").value = imageUrl || '';
         
         document.getElementById("form-available-group").style.display = "block";
         document.getElementById("form-shop-select-group").style.display = "none";
@@ -516,6 +534,7 @@
         document.getElementById("edit-prod-id").value = "";
         document.getElementById("form-prod-name").value = "";
         document.getElementById("form-prod-price").value = "";
+        document.getElementById("form-prod-image").value = "";
         
         document.getElementById("form-available-group").style.display = "none";
         document.getElementById("form-shop-select-group").style.display = "block";

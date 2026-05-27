@@ -742,13 +742,14 @@ def admin_add_product():
     shop_id = data.get('shop_id')
     name = data.get('name')
     price = data.get('price')
+    image_url = data.get('image_url', '').strip()
     
     if not shop_id or not name or price is None:
         return jsonify({'error': 'Parameters shop_id, name, and price are required.'}), 400
         
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("INSERT INTO products (shop_id, name, price) VALUES (?, ?, ?)", (shop_id, name, float(price)))
+    cursor.execute("INSERT INTO products (shop_id, name, price, image_url) VALUES (?, ?, ?, ?)", (shop_id, name, float(price), image_url or None))
     db.commit()
     return jsonify({'message': 'Product added successfully.', 'id': cursor.lastrowid})
 
@@ -766,12 +767,13 @@ def admin_modify_product(prod_id):
         name = data.get('name')
         price = data.get('price')
         is_available = data.get('is_available', 1)
+        image_url = data.get('image_url', '').strip()
         
         cursor.execute('''
             UPDATE products 
-            SET name = ?, price = ?, is_available = ? 
+            SET name = ?, price = ?, is_available = ?, image_url = ? 
             WHERE id = ?
-        ''', (name, float(price), int(is_available), prod_id))
+        ''', (name, float(price), int(is_available), image_url or None, prod_id))
         db.commit()
         return jsonify({'message': 'Product updated successfully.'})
 
