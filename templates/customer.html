@@ -416,6 +416,63 @@
         refreshIcons();
     }
 
+    // Toast Notification System (Blinkit Style)
+    function showToast(message, type = 'success') {
+        const existingToast = document.getElementById("toast-notification");
+        if (existingToast) existingToast.remove();
+        
+        const toast = document.createElement("div");
+        toast.id = "toast-notification";
+        toast.style = `
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: white;
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.1);
+        `;
+        
+        const icon = type === 'success' ? '🛒' : '🗑️';
+        toast.innerHTML = `<span style="font-size: 1.2rem;">${icon}</span> <span>${message}</span>`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = "1";
+            toast.style.transform = "translateX(-50%) translateY(0)";
+        }, 50);
+        
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(-50%) translateY(-20px)";
+            setTimeout(() => toast.remove(), 300);
+        }, 1600);
+    }
+
+    // Floating Cart Shake/Pulse
+    function pulseStickyCart() {
+        const bar = document.getElementById("sticky-cart-bar");
+        if (bar && bar.style.display !== "none") {
+            bar.classList.add("cart-pulse");
+            setTimeout(() => {
+                bar.classList.remove("cart-pulse");
+            }, 400);
+        }
+    }
+
     function addToCart(prodId, qty) {
         const prod = productsList.find(p => p.id === prodId);
         if (!prod) return;
@@ -428,15 +485,22 @@
         };
         
         updateCartUI();
+        showToast(`${prod.name} added to cart!`);
+        pulseStickyCart();
     }
 
     function changeQty(prodId, delta) {
         if (!cart[prodId]) return;
         cart[prodId].quantity += delta;
+        const name = cart[prodId].name;
         if (cart[prodId].quantity <= 0) {
             delete cart[prodId];
+            showToast(`${name} removed from cart!`, 'warning');
+        } else {
+            showToast(`Updated ${name} quantity!`);
         }
         updateCartUI();
+        pulseStickyCart();
     }
 
     function updateCartUI() {
