@@ -74,8 +74,15 @@
                 <button class="btn btn-secondary" onclick="goBackToHome()" style="width: auto; padding: 8px 12px; display: flex; align-items: center; justify-content: center; margin: 0; border-radius: 50%;"><i data-lucide="arrow-left" style="width: 20px; height: 20px; margin: 0;"></i></button>
                 <h3 id="current-shop-name" style="font-size: 1.25rem; font-weight: 800; margin: 0;">Shop Name</h3>
             </div>
-            <span id="current-shop-badge" class="badge badge-normal text-accent" style="background: var(--primary-light); margin: 0;">Exclusive Partner</span>
+            <span id="current-shop-badge" class="badge badge-status-ready text-accent" style="background: var(--primary-light); margin: 0;">Exclusive Partner</span>
         </div>
+
+        <!-- Search bar within category -->
+        <div class="form-group" style="margin-bottom: 24px; position: relative;">
+            <input type="text" id="category-product-search" class="form-input" placeholder="Search products in this category..." oninput="filterCategoryProducts()" style="padding-left: 44px; border-radius: 30px;">
+            <i data-lucide="search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-muted); stroke-width: 2;"></i>
+        </div>
+
         <div class="products-grid" id="products-container">
             <!-- Loaded dynamically via JS -->
         </div>
@@ -352,6 +359,10 @@
 
     // Category Selector / Shop Router
     function selectCategory(category, shopId) {
+        // Clear category product search query on switching category
+        const searchInput = document.getElementById("category-product-search");
+        if (searchInput) searchInput.value = "";
+
         document.querySelectorAll(".category-card").forEach((card, index) => {
             if (index + 1 === shopId) card.classList.add("selected");
             else card.classList.remove("selected");
@@ -382,16 +393,49 @@
 
     // Back to Homepage Router
     function goBackToHome() {
+        // Clear category product search query on going home
+        const searchInput = document.getElementById("category-product-search");
+        if (searchInput) searchInput.value = "";
+
         navigateTo('home');
         document.querySelectorAll(".category-card").forEach(card => card.classList.remove("selected"));
         currentShopId = null;
     }
 
-    function renderProducts() {
+    // Live search filter for category products
+    function filterCategoryProducts() {
+        renderProducts();
+    }
+
+    function renderProducts(listToRender = null) {
         const container = document.getElementById("products-container");
         container.innerHTML = "";
         
-        productsList.forEach(prod => {
+        let list = listToRender;
+        if (!list) {
+            const searchInput = document.getElementById("category-product-search");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+            if (query) {
+                list = productsList.filter(prod => 
+                    prod.name.toLowerCase().includes(query)
+                );
+            } else {
+                list = productsList;
+            }
+        }
+
+        if (list.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                    <i data-lucide="package-search" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--text-muted); display: inline-block;"></i>
+                    <p style="color: var(--text-muted); font-size: 1rem; font-weight: 500;">No products found matching your search.</p>
+                </div>
+            `;
+            refreshIcons();
+            return;
+        }
+        
+        list.forEach(prod => {
             const card = document.createElement("div");
             card.className = "product-card fade-in-up";
             
