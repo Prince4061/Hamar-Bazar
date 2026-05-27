@@ -155,10 +155,9 @@
 
             <div class="form-group">
                 <label class="form-label">Payment Method</label>
-                <select id="payment-input" class="form-input">
-                    <option value="ONLINE">Pay Online (Simulated)</option>
-                    <option value="COD">Cash On Delivery</option>
-                </select>
+                <div class="form-input" style="background: #f8fafc; font-weight: 700; color: var(--emerald-green); display: flex; align-items: center; gap: 8px; border-color: var(--border-color); cursor: not-allowed;">
+                    💵 Pay on Delivery (Cash on Delivery)
+                </div>
             </div>
             
             <button class="btn btn-primary mt-md w-full" style="font-size: 1.1rem; padding: 16px;" onclick="checkoutOrder()">Place Order</button>
@@ -603,7 +602,7 @@
         }));
         
         const priority = document.querySelector('input[name="priority"]:checked').value;
-        const paymentMode = document.getElementById("payment-input").value;
+        const paymentMode = "COD";
         
         const checkoutPayload = {
             customer_id: customerId,
@@ -612,14 +611,7 @@
             priority_type: priority
         };
         
-        if (paymentMode === "ONLINE") {
-            alert("Redirecting to secure payment gateway...");
-            setTimeout(() => {
-                sendCheckoutRequest(checkoutPayload);
-            }, 1000);
-        } else {
-            sendCheckoutRequest(checkoutPayload);
-        }
+        sendCheckoutRequest(checkoutPayload);
     }
 
     function sendCheckoutRequest(payload) {
