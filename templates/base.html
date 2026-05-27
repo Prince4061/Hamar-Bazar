@@ -37,7 +37,7 @@
         {% if session.get('role') == 'customer' %}
             <a href="#" class="nav-item active" onclick="typeof goBackToHome === 'function' ? goBackToHome() : null;"><span class="nav-icon"><i data-lucide="home"></i></span>Home</a>
             <a href="#" class="nav-item" onclick="typeof showCartFromNav === 'function' ? showCartFromNav() : null;"><span class="nav-icon"><i data-lucide="shopping-cart"></i></span>Cart</a>
-            <a href="#" class="nav-item" onclick="toggleExpensesModal()"><span class="nav-icon"><i data-lucide="trending-up"></i></span>Stats</a>
+            <a href="#" class="nav-item" onclick="typeof showOrdersFromNav === 'function' ? showOrdersFromNav() : null;"><span class="nav-icon"><i data-lucide="package"></i></span>Your Order</a>
         {% elif session.get('role') == 'vendor' %}
             <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="clipboard-list"></i></span>Orders</a>
             <a href="#" class="nav-item" onclick="document.getElementById('inventory-list-container').scrollIntoView();"><span class="nav-icon"><i data-lucide="package"></i></span>Stock</a>

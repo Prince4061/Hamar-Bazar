@@ -275,7 +275,7 @@
         } else if (viewName === 'tracker') {
             document.getElementById("view-tracker").style.display = "block";
             document.getElementById("sticky-cart-bar").style.display = "none";
-            updateBottomNavActive('home');
+            updateBottomNavActive('tracker');
         }
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -292,6 +292,9 @@
             if (link) link.classList.add("active");
         } else if (tab === 'cart') {
             const link = Array.from(document.querySelectorAll(".mobile-bottom-nav a")).find(el => el.innerText.includes("Cart"));
+            if (link) link.classList.add("active");
+        } else if (tab === 'tracker') {
+            const link = Array.from(document.querySelectorAll(".mobile-bottom-nav a")).find(el => el.innerText.includes("Order"));
             if (link) link.classList.add("active");
         }
     }
@@ -749,6 +752,39 @@
                 
                 container.innerHTML = barsHtml;
             });
+    }
+
+    // Bottom Navbar Order Status Router Callback
+    function showOrdersFromNav() {
+        const cachedOrder = localStorage.getItem(`active_order_${customerId}`);
+        if (cachedOrder) {
+            const emptyTracker = document.getElementById("empty-tracker-container");
+            if (emptyTracker) emptyTracker.style.display = "none";
+            document.getElementById("active-order-container").style.display = "block";
+            startTracking(JSON.parse(cachedOrder).order_id);
+            navigateTo('tracker');
+        } else {
+            // If no active order, show a beautiful empty state inside the tracker container
+            document.getElementById("active-order-container").style.display = "none";
+            let emptyTracker = document.getElementById("empty-tracker-container");
+            if (!emptyTracker) {
+                emptyTracker = document.createElement("div");
+                emptyTracker.id = "empty-tracker-container";
+                emptyTracker.className = "glass-card";
+                emptyTracker.style = "text-align: center; padding: 60px 20px; border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center;";
+                emptyTracker.innerHTML = `
+                    <i data-lucide="package-open" style="width: 48px; height: 48px; stroke-width: 1.5; color: var(--primary-accent); margin-bottom: 16px;"></i>
+                    <h4 style="font-size: 1.25rem; font-weight: 800;">No active orders right now</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 8px; margin-bottom: 20px;">Place an order to track its live 10-minute delivery here!</p>
+                    <button class="btn btn-primary" onclick="navigateTo('home')" style="width: auto; padding: 10px 20px;">Browse Shop</button>
+                `;
+                document.getElementById("view-tracker").appendChild(emptyTracker);
+                refreshIcons();
+            } else {
+                emptyTracker.style.display = "flex";
+            }
+            navigateTo('tracker');
+        }
     }
 </script>
 {% endblock %}
