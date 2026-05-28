@@ -52,14 +52,18 @@
             <a href="#" class="nav-item" onclick="typeof showServicesFromNav === 'function' ? showServicesFromNav() : null;"><span class="nav-icon"><i data-lucide="wrench"></i></span>Services</a>
             <a href="#" class="nav-item" onclick="typeof showMedicalFromNav === 'function' ? showMedicalFromNav() : null;"><span class="nav-icon"><i data-lucide="pill"></i></span>Medical</a>
             <a href="#" class="nav-item" onclick="typeof showOrdersFromNav === 'function' ? showOrdersFromNav() : null;"><span class="nav-icon"><i data-lucide="package"></i></span>Your Order</a>
+            <a href="#" class="nav-item" onclick="typeof showSettingsFromNav === 'function' ? showSettingsFromNav() : null;"><span class="nav-icon"><i data-lucide="settings"></i></span>Settings</a>
         {% elif session.get('role') == 'vendor' %}
             <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="clipboard-list"></i></span>Orders</a>
             <a href="#" class="nav-item" onclick="document.getElementById('inventory-list-container').scrollIntoView();"><span class="nav-icon"><i data-lucide="package"></i></span>Stock</a>
+            <a href="/session/logout" class="nav-item"><span class="nav-icon"><i data-lucide="log-out"></i></span>Exit</a>
         {% elif session.get('role') == 'delivery' %}
             <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="bike"></i></span>Tasks</a>
             <a href="#" class="nav-item"><span class="nav-icon"><i data-lucide="credit-card"></i></span>Earnings</a>
+            <a href="/session/logout" class="nav-item"><span class="nav-icon"><i data-lucide="log-out"></i></span>Exit</a>
+        {% else %}
+            <a href="/session/logout" class="nav-item"><span class="nav-icon"><i data-lucide="log-out"></i></span>Exit</a>
         {% endif %}
-        <a href="/session/logout" class="nav-item"><span class="nav-icon"><i data-lucide="log-out"></i></span>Exit</a>
     </div>
     {% endif %}
 

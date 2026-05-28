@@ -1030,5 +1030,51 @@ def reset_rider_cooldown(rider_id):
     db.commit()
     return jsonify({'message': 'Rider cooldown and active orders reset.'})
 
+# --- Customer Profile Settings APIs ---
+@app.route('/api/customer/<int:customer_id>/profile/update', methods=['POST'])
+def update_customer_profile(customer_id):
+    data = request.json
+    name = data.get('name', '').strip()
+    address = data.get('address', '').strip()
+    password = data.get('password', '').strip()
+    
+    if not name or not address:
+        return jsonify({'success': False, 'error': 'Name and Address cannot be empty.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        if password:
+            cursor.execute('''
+                UPDATE users 
+                SET name = ?, address = ?, password = ? 
+                WHERE id = ?
+            ''', (name, address, password, customer_id))
+        else:
+            cursor.execute('''
+                UPDATE users 
+                SET name = ?, address = ? 
+                WHERE id = ?
+            ''', (name, address, customer_id))
+        db.commit()
+        
+        # Also update session name if the logged in user is this customer
+        if session.get('role') == 'customer' and session.get('role_id') == customer_id:
+            session['name'] = name
+            
+        return jsonify({'success': True, 'message': 'Profile updated successfully!'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/customer/<int:customer_id>/profile', methods=['GET'])
+def get_customer_profile(customer_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT id, name, phone, address, password FROM users WHERE id = ?", (customer_id,))
+    row = cursor.fetchone()
+    if row:
+        return jsonify(dict(row))
+    return jsonify({'error': 'Customer not found'}), 404
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
