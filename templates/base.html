@@ -10,6 +10,12 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="theme-{% if session.get('role') == 'vendor' %}vendor{% elif session.get('role') == 'delivery' %}delivery{% elif session.get('role') == 'admin' %}admin{% else %}customer{% endif %}">
+    <script>
+        // Inline immediate theme application to prevent white flicker on reload
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+    </script>
 
     <!-- Top Navbar for generic branding (if needed) -->
     {% if session.get('role') %}
@@ -18,7 +24,13 @@
             <span class="brand-badge">HAMAR</span>
             <span class="brand-title">हमर Bazar</span>
         </div>
-        <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+        <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 12px;">
+            <!-- Sleek Glass Theme Toggle Button -->
+            <button id="theme-toggle-btn" onclick="toggleThemeMode()" title="Toggle Dark/Light Mode" style="background: var(--primary-light); border: 1px solid rgba(255,255,255,0.2); cursor: pointer; color: var(--primary-accent); display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 20px; transition: var(--transition-fast); gap: 6px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 10px var(--primary-glow); outline: none;">
+                <i data-lucide="sun" id="theme-icon" style="width: 14px; height: 14px;"></i>
+                <span id="theme-text">Theme</span>
+            </button>
+            
             {% if session.get('role') == 'vendor' %}<i data-lucide="store" class="icon-inline"></i> Vendor Mode{% endif %}
             {% if session.get('role') == 'delivery' %}<i data-lucide="bike" class="icon-inline"></i> Delivery Mode{% endif %}
             {% if session.get('role') == 'admin' %}<i data-lucide="shield" class="icon-inline"></i> Admin Mode{% endif %}
@@ -229,6 +241,44 @@
             });
         });
 
+        // Dark Mode Initialization & Persistence
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeBtnIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                if (themeBtnIcon) themeBtnIcon.setAttribute('data-lucide', 'moon');
+                if (themeText) themeText.innerText = 'Dark';
+            } else {
+                document.body.classList.remove('dark-theme');
+                if (themeBtnIcon) themeBtnIcon.setAttribute('data-lucide', 'sun');
+                if (themeText) themeText.innerText = 'Light';
+            }
+            refreshIcons();
+        }
+
+        window.toggleThemeMode = function() {
+            const body = document.body;
+            const themeBtnIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            
+            if (body.classList.contains('dark-theme')) {
+                body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+                if (themeBtnIcon) themeBtnIcon.setAttribute('data-lucide', 'sun');
+                if (themeText) themeText.innerText = 'Light';
+                if (typeof showToast === 'function') showToast('Light mode active!');
+            } else {
+                body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+                if (themeBtnIcon) themeBtnIcon.setAttribute('data-lucide', 'moon');
+                if (themeText) themeText.innerText = 'Dark';
+                if (typeof showToast === 'function') showToast('Dark mode active!');
+            }
+            refreshIcons();
+        };
+
         function refreshIcons() {
             if (window.lucide) {
                 lucide.createIcons();
@@ -237,6 +287,7 @@
 
         // Initialize icons on DOMContentLoaded
         document.addEventListener("DOMContentLoaded", () => {
+            initTheme();
             refreshIcons();
         });
     </script>
