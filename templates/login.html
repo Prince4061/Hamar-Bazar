@@ -194,8 +194,9 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert("Logged in successfully! Redirecting...");
-                window.location.href = data.redirect;
+                alert("Logged in successfully! Redirecting...", () => {
+                    window.location.href = data.redirect;
+                });
             } else {
                 errorDiv.innerText = data.error;
                 errorDiv.style.display = "block";

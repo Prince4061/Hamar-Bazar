@@ -37,6 +37,8 @@
         {% if session.get('role') == 'customer' %}
             <a href="#" class="nav-item active" onclick="typeof goBackToHome === 'function' ? goBackToHome() : null;"><span class="nav-icon"><i data-lucide="home"></i></span>Home</a>
             <a href="#" class="nav-item" onclick="typeof showCartFromNav === 'function' ? showCartFromNav() : null;"><span class="nav-icon"><i data-lucide="shopping-cart"></i></span>Cart</a>
+            <a href="#" class="nav-item" onclick="typeof showServicesFromNav === 'function' ? showServicesFromNav() : null;"><span class="nav-icon"><i data-lucide="wrench"></i></span>Services</a>
+            <a href="#" class="nav-item" onclick="typeof showMedicalFromNav === 'function' ? showMedicalFromNav() : null;"><span class="nav-icon"><i data-lucide="pill"></i></span>Medical</a>
             <a href="#" class="nav-item" onclick="typeof showOrdersFromNav === 'function' ? showOrdersFromNav() : null;"><span class="nav-icon"><i data-lucide="package"></i></span>Your Order</a>
         {% elif session.get('role') == 'vendor' %}
             <a href="#" class="nav-item active"><span class="nav-icon"><i data-lucide="clipboard-list"></i></span>Orders</a>
@@ -49,8 +51,162 @@
     </div>
     {% endif %}
 
+    <!-- PREMIUM CUSTOM MODAL LAYER -->
+    <div id="h-custom-modal" class="h-modal-overlay">
+        <div class="h-modal-card">
+            <div id="h-modal-icon" class="h-modal-icon-wrapper success">
+                <i id="h-modal-lucide-icon" data-lucide="check-circle" style="width: 36px; height: 36px;"></i>
+            </div>
+            <h3 id="h-modal-title" class="h-modal-title">Success</h3>
+            <p id="h-modal-message" class="h-modal-message">Notification message here</p>
+            <div class="h-modal-actions">
+                <button id="h-modal-cancel-btn" class="h-modal-btn secondary" style="display: none;">Cancel</button>
+                <button id="h-modal-ok-btn" class="h-modal-btn primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM CUSTOM TOAST LAYER -->
+    <div id="h-toast-stack" class="h-toast-container"></div>
+
     <!-- Dropdown Toggle & Lucide Script -->
     <script>
+        // Premium Custom Notification, Alert and Confirm Overrides
+        const customModal = document.getElementById('h-custom-modal');
+        const modalIcon = document.getElementById('h-modal-icon');
+        const modalLucideIcon = document.getElementById('h-modal-lucide-icon');
+        const modalTitle = document.getElementById('h-modal-title');
+        const modalMessage = document.getElementById('h-modal-message');
+        const modalCancelBtn = document.getElementById('h-modal-cancel-btn');
+        const modalOkBtn = document.getElementById('h-modal-ok-btn');
+        
+        let activeAlertCallback = null;
+
+        // Custom Override for window.alert
+        window.alert = function(message, callback) {
+            if (!message) return;
+            
+            // Determine type of alert based on keywords
+            let type = 'info';
+            let title = 'Notification';
+            let iconName = 'info';
+            
+            const lowerMsg = message.toString().toLowerCase();
+            if (lowerMsg.includes('success') || lowerMsg.includes('confirmed') || lowerMsg.includes('delivered') || lowerMsg.includes('accepted')) {
+                type = 'success';
+                title = 'Success';
+                iconName = 'check-circle';
+            } else if (lowerMsg.includes('error') || lowerMsg.includes('failed') || lowerMsg.includes('invalid') || lowerMsg.includes('incorrect') || lowerMsg.includes('missing') || lowerMsg.includes('incorrect password')) {
+                type = 'error';
+                title = 'Error';
+                iconName = 'x-circle';
+            } else if (lowerMsg.includes('warning') || lowerMsg.includes('please') || lowerMsg.includes('wait') || lowerMsg.includes('cooldown') || lowerMsg.includes('alert')) {
+                type = 'warning';
+                title = 'Attention';
+                iconName = 'alert-triangle';
+            }
+            
+            // Set styles and content
+            modalIcon.className = `h-modal-icon-wrapper ${type}`;
+            modalLucideIcon.setAttribute('data-lucide', iconName);
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+            
+            // Hide cancel button for basic alerts
+            modalCancelBtn.style.display = 'none';
+            modalOkBtn.className = 'h-modal-btn primary';
+            modalOkBtn.innerText = 'OK';
+            
+            refreshIcons();
+            
+            // Show modal
+            customModal.classList.add('active');
+            
+            activeAlertCallback = callback || null;
+            
+            // If the message says "Redirecting..." or "Redirecting", set an automatic timeout of 1.5 seconds so it feels extremely slick!
+            let autoRedirectTimeout = null;
+            if (lowerMsg.includes('redirecting')) {
+                autoRedirectTimeout = setTimeout(() => {
+                    closeModal(true);
+                }, 1500);
+            }
+            
+            // Clear any previous listeners on OK button
+            modalOkBtn.onclick = function() {
+                if (autoRedirectTimeout) clearTimeout(autoRedirectTimeout);
+                closeModal(true);
+            };
+        };
+
+        // Custom Override for window.confirm
+        window.confirm = function(message, onConfirm, onCancel) {
+            return new Promise((resolve) => {
+                modalIcon.className = 'h-modal-icon-wrapper confirm';
+                modalLucideIcon.setAttribute('data-lucide', 'help-circle');
+                modalTitle.innerText = 'Confirm Action';
+                modalMessage.innerText = message;
+                
+                // Show cancel button
+                modalCancelBtn.style.display = 'block';
+                modalCancelBtn.innerText = 'Cancel';
+                modalOkBtn.className = 'h-modal-btn primary';
+                modalOkBtn.innerText = 'Yes, Proceed';
+                
+                refreshIcons();
+                
+                customModal.classList.add('active');
+                
+                modalOkBtn.onclick = function() {
+                    closeModal();
+                    resolve(true);
+                    if (typeof onConfirm === 'function') onConfirm();
+                };
+                
+                modalCancelBtn.onclick = function() {
+                    closeModal();
+                    resolve(false);
+                    if (typeof onCancel === 'function') onCancel();
+                };
+            });
+        };
+
+        function closeModal(triggerCallback = false) {
+            customModal.classList.remove('active');
+            if (triggerCallback && typeof activeAlertCallback === 'function') {
+                const cb = activeAlertCallback;
+                activeAlertCallback = null;
+                cb();
+            }
+        }
+
+        // Custom Toast Alert Stack Helper
+        window.showToast = function(message, type = 'success') {
+            const toastStack = document.getElementById('h-toast-stack');
+            if (!toastStack) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `h-toast ${type}`;
+            
+            let icon = '💡';
+            if (type === 'success') icon = '🛒';
+            else if (type === 'error') icon = '🗑️';
+            else if (type === 'warning') icon = '⚠️';
+            else if (type === 'info') icon = 'ℹ️';
+            
+            toast.innerHTML = `<span style="font-size: 1.15rem;">${icon}</span> <span>${message}</span>`;
+            toastStack.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('active');
+            }, 50);
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+                setTimeout(() => toast.remove(), 400);
+            }, 2500);
+        };
+
         function toggleDropdown(event, id) {
             event.preventDefault();
             event.stopPropagation();

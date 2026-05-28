@@ -538,8 +538,9 @@
         refreshIcons();
     }
 
-    function deleteProduct(id) {
-        if (!confirm("Remove this product from the catalog?")) return;
+    async function deleteProduct(id) {
+        const confirmed = await confirm("Remove this product from the catalog?");
+        if (!confirmed) return;
         
         fetch(`/api/admin/products/${id}`, { method: "DELETE" })
             .then(res => res.json())
@@ -807,8 +808,9 @@
         refreshIcons();
     }
 
-    function deleteStaffMember(id, role) {
-        if (!confirm(`Are you sure you want to remove this ${role} account?`)) return;
+    async function deleteStaffMember(id, role) {
+        const confirmed = await confirm(`Are you sure you want to remove this ${role} account?`);
+        if (!confirmed) return;
         
         const apiRole = role === 'vendor' ? 'shop' : role;
         fetch(`/api/admin/staff/${apiRole}/${id}`, { method: "DELETE" })

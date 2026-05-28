@@ -197,7 +197,14 @@ def seed_db():
         ('Apna Bazaar (Kirana & General)', 'KIRANA', 5.0, 'kirana', '123456'),
         ('The Bakers Table (Premium Cakes)', 'CAKES', 8.0, 'cakes', '123456'),
         ('Fresh & Green Vegetables', 'VEGGIES', 4.0, 'veggies', '123456'),
-        ('ElectroWorld Solutions', 'ELECTRONICS', 10.0, 'electronics', '123456')
+        ('ElectroWorld Solutions', 'ELECTRONICS', 10.0, 'electronics', '123456'),
+        ('Hamar Pharmacy (OTC & Wellness)', 'OTC_WELLNESS', 5.0, 'otc_wellness', '123456'),
+        ('Hamar Pharmacy (Prescriptions)', 'PRESCRIPTION', 5.0, 'prescription', '123456'),
+        ('Hamar Pharmacy (First Aid & Surgical)', 'FIRST_AID', 5.0, 'first_aid', '123456'),
+        ('Hamar Pharmacy (Baby Care & Hygiene)', 'BABY_CARE', 5.0, 'baby_care', '123456'),
+        ('Hamar Plumber Services', 'PLUMBER_SERVICE', 5.0, 'plumber', '123456'),
+        ('Hamar Electrician Services', 'ELECTRICIAN_SERVICE', 5.0, 'electrician', '123456'),
+        ('Hamar Mistri & Repair Services', 'MISTRI_SERVICE', 5.0, 'mistri', '123456')
     ]
     for shop in shops_data:
         try:
@@ -210,12 +217,26 @@ def seed_db():
     cursor.execute("UPDATE shops SET username = 'cakes', password = '123456' WHERE category = 'CAKES' AND username IS NULL")
     cursor.execute("UPDATE shops SET username = 'veggies', password = '123456' WHERE category = 'VEGGIES' AND username IS NULL")
     cursor.execute("UPDATE shops SET username = 'electronics', password = '123456' WHERE category = 'ELECTRONICS' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'otc_wellness', password = '123456' WHERE category = 'OTC_WELLNESS' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'prescription', password = '123456' WHERE category = 'PRESCRIPTION' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'first_aid', password = '123456' WHERE category = 'FIRST_AID' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'baby_care', password = '123456' WHERE category = 'BABY_CARE' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'plumber', password = '123456' WHERE category = 'PLUMBER_SERVICE' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'electrician', password = '123456' WHERE category = 'ELECTRICIAN_SERVICE' AND username IS NULL")
+    cursor.execute("UPDATE shops SET username = 'mistri', password = '123456' WHERE category = 'MISTRI_SERVICE' AND username IS NULL")
             
     # Populate beautiful Unsplash category images for seeded shops if empty
     cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60' WHERE category = 'KIRANA' AND image_url IS NULL")
     cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=60' WHERE category = 'CAKES' AND image_url IS NULL")
     cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60' WHERE category = 'VEGGIES' AND image_url IS NULL")
     cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=500&auto=format&fit=crop&q=60' WHERE category = 'ELECTRONICS' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500&auto=format&fit=crop&q=60' WHERE category = 'OTC_WELLNESS' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=500&auto=format&fit=crop&q=60' WHERE category = 'PRESCRIPTION' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1603398938378-e54eab446edd?w=500&auto=format&fit=crop&q=60' WHERE category = 'FIRST_AID' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=500&auto=format&fit=crop&q=60' WHERE category = 'BABY_CARE' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60' WHERE category = 'PLUMBER_SERVICE' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&auto=format&fit=crop&q=60' WHERE category = 'ELECTRICIAN_SERVICE' AND image_url IS NULL")
+    cursor.execute("UPDATE shops SET image_url = 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=500&auto=format&fit=crop&q=60' WHERE category = 'MISTRI_SERVICE' AND image_url IS NULL")
 
     conn.commit()
     
@@ -246,7 +267,37 @@ def seed_db():
         (shop_ids['ELECTRONICS'], 'Fast USB-C Cable 1.5m', 150.0, 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=500&auto=format&fit=crop&q=60'),
         (shop_ids['ELECTRONICS'], 'Wired Earphones with Mic', 250.0, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&auto=format&fit=crop&q=60'),
         (shop_ids['ELECTRONICS'], 'AA Duracell Battery 4pc', 120.0, 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=500&auto=format&fit=crop&q=60'),
-        (shop_ids['ELECTRONICS'], 'Smart WiFi Plug 16A', 599.0, 'https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60')
+        (shop_ids['ELECTRONICS'], 'Smart WiFi Plug 16A', 599.0, 'https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60'),
+        # OTC & Wellness
+        (shop_ids['OTC_WELLNESS'], 'Paracetamol 650mg (15 tabs)', 30.0, 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['OTC_WELLNESS'], 'Multivitamin Gummies (30pc)', 350.0, 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['OTC_WELLNESS'], 'Herbal Cough Syrup 100ml', 90.0, 'https://images.unsplash.com/photo-1550572017-edd951b55104?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['OTC_WELLNESS'], 'Pain Relief Spray 55g', 140.0, 'https://images.unsplash.com/photo-1607619056574-7b8d304f3c6f?w=500&auto=format&fit=crop&q=60'),
+        # Prescription
+        (shop_ids['PRESCRIPTION'], 'Amoxicillin 500mg (10 caps)', 85.0, 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['PRESCRIPTION'], 'Metformin 500mg (15 tabs)', 45.0, 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['PRESCRIPTION'], 'Digital Blood Pressure Monitor', 1299.0, 'https://images.unsplash.com/photo-1603398938378-e54eab446edd?w=500&auto=format&fit=crop&q=60'),
+        # First Aid
+        (shop_ids['FIRST_AID'], 'Waterproof Band-Aid (20pc)', 50.0, 'https://images.unsplash.com/photo-1603398938378-e54eab446edd?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['FIRST_AID'], 'Antiseptic Liquid 250ml', 110.0, 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['FIRST_AID'], 'Digital Thermometer Fast', 220.0, 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['FIRST_AID'], 'Sterilized Cotton Roll 100g', 60.0, 'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=500&auto=format&fit=crop&q=60'),
+        # Baby Care
+        (shop_ids['BABY_CARE'], 'Premium Baby Diaper Pack (24pc)', 299.0, 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['BABY_CARE'], 'Gentle Baby Wipes (80pc)', 120.0, 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['BABY_CARE'], 'Nourishing Baby Powder 200g', 150.0, 'https://images.unsplash.com/photo-1515488042361-404e9250afef?w=500&auto=format&fit=crop&q=60'),
+        # Plumber Services
+        (shop_ids['PLUMBER_SERVICE'], 'Kitchen Sink Leakage Fix', 199.0, 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['PLUMBER_SERVICE'], 'New Water Tap Installation', 120.0, 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['PLUMBER_SERVICE'], 'Complete Bathroom Unclogging', 499.0, 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60'),
+        # Electrician Services
+        (shop_ids['ELECTRICIAN_SERVICE'], 'Ceiling Fan Repair & Mount', 150.0, 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['ELECTRICIAN_SERVICE'], 'Wiring Short-Circuit Check', 350.0, 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['ELECTRICIAN_SERVICE'], 'Switchboard Setup & Replacement', 180.0, 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=500&auto=format&fit=crop&q=60'),
+        # Mistri / Carpenter Services
+        (shop_ids['MISTRI_SERVICE'], 'Wooden Door Repair & Alignment', 250.0, 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['MISTRI_SERVICE'], 'Wall Patching Cement Plastering', 399.0, 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=500&auto=format&fit=crop&q=60'),
+        (shop_ids['MISTRI_SERVICE'], 'Custom Carpentry Work (per hour)', 200.0, 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=500&auto=format&fit=crop&q=60')
     ]
     
     for product in products_data:
