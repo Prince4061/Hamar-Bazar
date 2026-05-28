@@ -307,6 +307,16 @@
 
             <button class="btn btn-primary" onclick="updateCustomerProfileData()" style="padding: 14px; font-size: 1rem; width: 100%; border-radius: var(--radius-md);">Save Settings</button>
         </div>
+        <!-- CUSTOMER SUPPORT SECTION -->
+        <div style="background: var(--primary-light); border: 1px solid rgba(111, 44, 244, 0.15); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 28px; text-align: left; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;"><i data-lucide="phone-call" style="color: var(--primary-accent); width: 18px; height: 18px;"></i> Customer Support</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Have queries or need help? Talk to our agent.</p>
+            </div>
+            <a id="settings-support-link" href="tel:9000000001" style="background: var(--primary-accent); color: white; padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.9rem; text-decoration: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px var(--primary-glow);">
+                <i data-lucide="phone" style="width: 14px; height: 14px;"></i> Call <span id="settings-support-number-text">9000000001</span>
+            </a>
+        </div>
 
         <!-- ABOUT US SECTION -->
         <div style="background: rgba(111, 44, 244, 0.03); border: 1px dashed var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 32px; text-align: left;">
@@ -584,6 +594,17 @@
                 document.getElementById("settings-name-input").value = profile.name;
                 document.getElementById("settings-address-input").value = profile.address || "";
                 document.getElementById("settings-password-input").value = ""; // Clear for security
+            });
+
+        // Load global settings for support number
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(settings => {
+                const supportNum = settings.support_number || '9000000001';
+                const supportLink = document.getElementById("settings-support-link");
+                const supportText = document.getElementById("settings-support-number-text");
+                if (supportLink) supportLink.setAttribute("href", `tel:${supportNum}`);
+                if (supportText) supportText.innerText = supportNum;
             });
     }
 

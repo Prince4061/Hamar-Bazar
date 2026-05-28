@@ -996,16 +996,20 @@ def get_settings():
     settings = {row['key']: row['value'] for row in cursor.fetchall()}
     if 'delivery_fee' not in settings:
         settings['delivery_fee'] = '40.0'
+    if 'support_number' not in settings:
+        settings['support_number'] = '9000000001'
     return jsonify(settings)
 
 @app.route('/api/admin/settings', methods=['POST'])
 def save_settings():
     data = request.json
     delivery_fee = data.get('delivery_fee', '40.0')
+    support_number = data.get('support_number', '9000000001')
     try:
         db = get_db()
         cursor = db.cursor()
         cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('delivery_fee', ?)", (str(delivery_fee),))
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('support_number', ?)", (str(support_number),))
         db.commit()
         return jsonify({'success': True, 'message': 'Settings saved successfully.'})
     except Exception as e:
