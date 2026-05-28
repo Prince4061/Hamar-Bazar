@@ -90,20 +90,7 @@
             </div>
         </div>
         
-        <!-- SMART RECOMMENDATION BOX (INT-001) -->
-        <div id="recommendation-box" style="display: none; background: #faf5ff; border: 1px solid #d8b4fe; padding: 16px; margin-bottom: 24px; border-radius: var(--radius-md);">
-            <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
-                <i data-lucide="sparkles" class="icon-inline" style="margin: 0; width: 14px; height: 14px; color: var(--primary-accent);"></i>
-                <span style="font-size: 0.8rem; color: var(--primary-accent); font-weight: 800; text-transform: uppercase;">AI Suggestion</span>
-            </div>
-            <div class="flex-between">
-                <div>
-                    <span id="rec-item-name" style="font-weight: 700; font-size: 0.95rem;">Butter</span>
-                    <span id="rec-item-price" style="font-size: 0.85rem; color: var(--text-secondary); display: block;">₹60.0</span>
-                </div>
-                <button class="btn btn-primary" id="rec-add-btn" style="width: auto; padding: 8px 16px; font-size: 0.85rem; border-radius: 20px;">+ Add</button>
-            </div>
-        </div>
+        <!-- SMART RECOMMENDATION BOX REMOVED -->
 
         <div id="cart-summary-section" style="display: none; border-top: 1px solid var(--border-color); padding-top: 20px;">
             <div class="flex-between mb-sm" style="font-size: 0.95rem;">
@@ -111,12 +98,8 @@
                 <span id="cart-subtotal" style="font-weight: 600;">₹0.00</span>
             </div>
             <div class="flex-between mb-sm" style="font-size: 0.95rem;">
-                <span style="color: var(--text-secondary);">Handling & GST (18%)</span>
-                <span id="cart-gst" style="font-weight: 600;">₹0.00</span>
-            </div>
-            <div class="flex-between mb-sm" style="font-size: 0.95rem;">
                 <span style="color: var(--text-secondary);">Delivery Fee</span>
-                <span style="font-weight: 700; color: var(--emerald-green);">FREE</span>
+                <span id="cart-delivery-fee" style="font-weight: 700; color: var(--emerald-green);">FREE</span>
             </div>
             <div class="flex-between mt-md" style="font-size: 1.25rem; font-weight: 800; border-top: 2px dashed var(--border-color); padding-top: 16px;">
                 <span>To Pay</span>
@@ -240,10 +223,12 @@
     let productsList = [];
     let cart = {}; // product_id -> {name, price, quantity}
     let trackingInterval = null;
+    let deliveryFee = 0.0;
 
     // Load active order if exists in localStorage
     document.addEventListener("DOMContentLoaded", () => {
         loadCategories();
+        loadSystemSettings();
         
         const cachedOrder = localStorage.getItem(`active_order_${customerId}`);
         if (cachedOrder) {
@@ -292,6 +277,15 @@
                     container.appendChild(card);
                 });
                 refreshIcons();
+            });
+    }
+
+    function loadSystemSettings() {
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(settings => {
+                deliveryFee = parseFloat(settings.delivery_fee) || 0.0;
+                updateCartUI();
             });
     }
 
@@ -359,8 +353,7 @@
             total += cart[k].price * cart[k].quantity;
         });
         
-        const gst = total * 0.18;
-        const grandTotal = total + gst;
+        const grandTotal = total + deliveryFee;
         
         document.getElementById("sticky-cart-count").innerText = `${count} Item${count > 1 ? 's' : ''}`;
         document.getElementById("sticky-cart-total").innerText = `₹${grandTotal.toFixed(2)}`;
@@ -368,13 +361,7 @@
         refreshIcons();
     }
 
-    // Rule-based Recommendation Mapping (INT-001)
-    const recRules = {
-        'milk': { id: 3, name: 'Amul Butter 100g', price: 60.0 },
-        'bread': { id: 3, name: 'Amul Butter 100g', price: 60.0 },
-        'cake': { id: 8, name: 'Sparkling Candles Pack', price: 35.0 },
-        'battery': { id: 15, name: 'Fast USB-C Cable 1.5m', price: 150.0 }
-    };
+    // Rule-based Recommendation Mapping REMOVED
 
     // Category Selector / Shop Router
     function selectCategory(category, shopId) {
@@ -610,51 +597,20 @@
             container.appendChild(itemRow);
         });
         
-        // Smart recommendation matching
-        let recFound = null;
-        for (let key in cart) {
-            const item_name_lower = cart[key].name.toLowerCase();
-            for (let word in recRules) {
-                if (item_name_lower.includes(word)) {
-                    const recProd = recRules[word];
-                    if (!cart[recProd.id]) {
-                        recFound = recProd;
-                        break;
-                    }
-                }
-            }
-            if (recFound) break;
-        }
-        
-        const recBox = document.getElementById("recommendation-box");
-        if (recFound) {
-            recBox.style.display = "block";
-            recBox.classList.add("fade-in-up");
-            document.getElementById("rec-item-name").innerText = recFound.name;
-            document.getElementById("rec-item-price").innerText = `₹${recFound.price.toFixed(2)}`;
-            document.getElementById("rec-add-btn").onclick = () => {
-                const inList = productsList.find(p => p.id === recFound.id);
-                if (inList) {
-                    addToCart(recFound.id, 1);
-                } else {
-                    cart[recFound.id] = {
-                        id: recFound.id,
-                        name: recFound.name,
-                        price: recFound.price,
-                        quantity: 1
-                    };
-                    updateCartUI();
-                }
-            };
-        } else {
-            recBox.style.display = "none";
-        }
-        
-        const gst = subtotal * 0.18;
-        const grand = subtotal + gst;
+        const grand = subtotal + deliveryFee;
         
         document.getElementById("cart-subtotal").innerText = `₹${subtotal.toFixed(2)}`;
-        document.getElementById("cart-gst").innerText = `₹${gst.toFixed(2)}`;
+        
+        const delFeeEl = document.getElementById("cart-delivery-fee");
+        if (delFeeEl) {
+            delFeeEl.innerText = deliveryFee > 0 ? `₹${deliveryFee.toFixed(2)}` : 'FREE';
+            if (deliveryFee === 0) {
+                delFeeEl.style.color = 'var(--emerald-green)';
+            } else {
+                delFeeEl.style.color = 'var(--text-primary)';
+            }
+        }
+        
         document.getElementById("cart-grandtotal").innerText = `₹${grand.toFixed(2)}`;
         refreshIcons();
     }

@@ -312,10 +312,13 @@ def place_order():
             'price': prod['price']
         })
         
-    # GST calculation: Standard 18% GST (or customized at shop level)
-    # The updated PRD mentions a Dynamic GST control. Let's set 18% general default or commission.
-    gst_amount = total_amount * 0.18
-    grand_total = total_amount + gst_amount
+    # Fetch delivery fee from settings
+    cursor.execute("SELECT value FROM settings WHERE key = 'delivery_fee'")
+    settings_row = cursor.fetchone()
+    delivery_fee = float(settings_row['value']) if settings_row else 40.0
+
+    gst_amount = 0.0
+    grand_total = total_amount + delivery_fee
     
     # Generate OTPs (4 digits numeric)
     pickup_otp = f"{random.randint(1000, 9999)}"
@@ -323,9 +326,9 @@ def place_order():
     
     # Insert Order Master record
     cursor.execute('''
-        INSERT INTO orders (customer_id, shop_id, total_amount, gst_amount, priority_type, status, pickup_otp, delivery_otp)
-        VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?)
-    ''', (customer_id, shop_id, grand_total, gst_amount, priority_type, pickup_otp, delivery_otp))
+        INSERT INTO orders (customer_id, shop_id, total_amount, gst_amount, priority_type, status, pickup_otp, delivery_otp, delivery_fee)
+        VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?, ?)
+    ''', (customer_id, shop_id, grand_total, gst_amount, priority_type, pickup_otp, delivery_otp, delivery_fee))
     
     order_id = cursor.lastrowid
     
@@ -659,17 +662,17 @@ def get_admin_analytics():
     cursor.execute("SELECT COUNT(id) FROM orders WHERE status = 'FAILED' OR failure_reason IS NOT NULL")
     failed_count = cursor.fetchone()[0]
     
-    cursor.execute("SELECT SUM(total_amount) FROM orders WHERE status = 'DELIVERED'")
+    cursor.execute("SELECT SUM(total_amount - delivery_fee) FROM orders WHERE status = 'DELIVERED'")
     total_rev = cursor.fetchone()[0] or 0.0
     
-    cursor.execute("SELECT SUM(total_amount * (SELECT commission_pct FROM shops s WHERE s.id = orders.shop_id) / 100.0) FROM orders WHERE status = 'DELIVERED'")
+    cursor.execute("SELECT SUM((total_amount - delivery_fee) * (SELECT commission_pct FROM shops s WHERE s.id = orders.shop_id) / 100.0) FROM orders WHERE status = 'DELIVERED'")
     total_comm = cursor.fetchone()[0] or 0.0
     
     # 2. Shop-wise sales & ratings (Vendor Reputation Score, INT-010, ADMIN-001)
     cursor.execute('''
         SELECT s.id as shop_id, s.shop_name, s.category,
                COUNT(o.id) as total_orders,
-               SUM(CASE WHEN o.status = 'DELIVERED' THEN o.total_amount ELSE 0 END) as sales,
+               SUM(CASE WHEN o.status = 'DELIVERED' THEN o.total_amount - o.delivery_fee ELSE 0 END) as sales,
                SUM(CASE WHEN o.status = 'DELIVERED' THEN 1 ELSE 0 END) as success_orders,
                SUM(CASE WHEN o.status = 'FAILED' OR o.failure_reason IS NOT NULL THEN 1 ELSE 0 END) as failed_orders
         FROM shops s
@@ -983,6 +986,30 @@ def get_rider_active_order(rider_id):
     if row:
         return jsonify({'active_order_id': row['id']})
     return jsonify({'active_order_id': None})
+
+# --- Global System Settings APIs ---
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT key, value FROM settings")
+    settings = {row['key']: row['value'] for row in cursor.fetchall()}
+    if 'delivery_fee' not in settings:
+        settings['delivery_fee'] = '40.0'
+    return jsonify(settings)
+
+@app.route('/api/admin/settings', methods=['POST'])
+def save_settings():
+    data = request.json
+    delivery_fee = data.get('delivery_fee', '40.0')
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('delivery_fee', ?)", (str(delivery_fee),))
+        db.commit()
+        return jsonify({'success': True, 'message': 'Settings saved successfully.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/api/delivery/rider/<int:rider_id>/status', methods=['GET'])
 def get_rider_status(rider_id):

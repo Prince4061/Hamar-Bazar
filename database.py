@@ -126,6 +126,7 @@ def init_db():
         ready_at TIMESTAMP,
         delivered_at TIMESTAMP,
         failure_reason TEXT,
+        delivery_fee REAL DEFAULT 0.0,
         FOREIGN KEY (customer_id) REFERENCES users(id),
         FOREIGN KEY (shop_id) REFERENCES shops(id),
         FOREIGN KEY (delivery_boy_id) REFERENCES delivery_partners(id)
@@ -154,6 +155,23 @@ def init_db():
     )
     ''')
     
+    # 8. Settings Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )
+    ''')
+    
+    try:
+        cursor.execute("SELECT delivery_fee FROM orders LIMIT 1")
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute("ALTER TABLE orders ADD COLUMN delivery_fee REAL DEFAULT 0.0")
+            conn.commit()
+        except Exception:
+            pass
+
     conn.commit()
     conn.close()
     print("Database tables created successfully!")
@@ -260,6 +278,12 @@ def seed_db():
     try:
         cursor.execute("INSERT INTO admins (username, password) VALUES (?, ?)", ('admin', 'admin123'))
     except sqlite3.IntegrityError:
+        pass
+        
+    # Seed Settings
+    try:
+        cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('delivery_fee', '40.0')")
+    except Exception:
         pass
         
     conn.commit()
